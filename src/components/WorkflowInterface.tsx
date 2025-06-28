@@ -518,26 +518,6 @@ export const WorkflowInterface: React.FC = () => {
     console.log("✅ DEBUG: Final converted results:", results);
     console.log("✅ DEBUG: Total results count:", results.length);
 
-    // TEMPORARY: Add a test result to see if UI rendering works
-    if (results.length === 0) {
-      console.log("🧪 DEBUG: No results found, adding test result");
-      results.push({
-        type: "file",
-        app: "word",
-        title: "Test Document Created",
-        description: "This is a test result to verify UI rendering",
-        quickActions: [
-          {
-            label: "Open Word",
-            icon: getAppIcon("word"),
-            action: () =>
-              window.open("https://m365.cloud.microsoft/launch/word", "_blank"),
-            primary: true,
-          },
-        ],
-      });
-    }
-
     return results;
   };
 
