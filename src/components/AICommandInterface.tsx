@@ -72,6 +72,8 @@ export const AICommandInterface: React.FC<AICommandInterfaceProps> = ({
     isAuthenticated: accounts.length > 0,
     accountType,
     isReady,
+    documentsError,
+    documentsCount: documents?.length || 0,
   });
 
   // Update parent component when commands change
@@ -213,6 +215,14 @@ export const AICommandInterface: React.FC<AICommandInterfaceProps> = ({
 
     const detectedApps = detectApps(command);
 
+    console.log("🎯 Starting command execution:", {
+      command: command.trim(),
+      isReady,
+      detectedApps,
+      accountsLength: accounts.length,
+      accountType,
+    });
+
     const newCommand: AICommand = {
       id: Date.now().toString(),
       command: command.trim(),
@@ -231,16 +241,23 @@ export const AICommandInterface: React.FC<AICommandInterfaceProps> = ({
       let completedCommand: AICommand;
 
       if (isReady) {
+        console.log("✅ Using real API processor...");
         // Use real API processor for business accounts
         completedCommand = await executeRealCommand(
           newCommand.command,
           detectedApps
         );
-        console.log("✅ AI command completed:", completedCommand.result);
+        console.log("✅ AI command completed:", completedCommand);
       } else {
+        console.log("❌ Not ready for real API:", { isReady, accountType, accountsLength: accounts.length });
         // Show error for non-business accounts
         throw new Error("Business Microsoft 365 account required for AI commands");
       }
+
+      console.log("🔄 Updating commands with completed result:", {
+        newCommandId: newCommand.id,
+        completedCommand,
+      });
 
       setCommands((prev) =>
         prev.map((cmd) =>
@@ -249,6 +266,8 @@ export const AICommandInterface: React.FC<AICommandInterfaceProps> = ({
             : cmd
         )
       );
+
+      console.log("✅ Commands state updated successfully");
 
       dispatchToast(
         <Toast>
