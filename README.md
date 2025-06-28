@@ -184,4 +184,4 @@ For questions or issues:
 
 **Built for the future of work - where AI handles the complexity, and you focus on what matters most.**
 
-*Samara AI: Transforming 10 hours of work into 5 minutes of magic.*
+*Samara AI: Transforming 10 hours of work into 5 minutes of magic.*# samara-prompt
