@@ -27,7 +27,6 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { useMsal } from "@azure/msal-react";
 import { RealAICommandProcessor } from "../services/realAICommands";
-import { DemoAICommandProcessor } from "../services/demoAICommands";
 import { loginRequest } from "../config/msalConfig";
 import { useGraphData } from "../hooks/useGraphData";
 
@@ -66,27 +65,14 @@ export const AICommandInterface: React.FC<AICommandInterfaceProps> = ({
   const { instance, accounts } = useMsal();
   const { documents, error: documentsError, accountType } = useGraphData();
 
-  // Simplified logic - use real API for authenticated business accounts
-  const shouldUseRealAPI = () => {
-    const isAuthenticated = accounts.length > 0;
-    const isBusinessAccount = accountType === "business";
+  // Check if user is ready for API usage
+  const isReady = accounts.length > 0 && accountType === "business";
 
-    // For Business accounts, ALWAYS use real API when authenticated
-    // All Microsoft 365 apps are accessible through Microsoft Graph
-    const useRealAPI = isAuthenticated && isBusinessAccount;
-
-    console.log("🤖 AI Command Mode Decision:", {
-      isAuthenticated,
-      isBusinessAccount,
-      accountType,
-      documentsError,
-      decision: useRealAPI ? "REAL API" : "DEMO MODE",
-    });
-
-    return useRealAPI;
-  };
-
-  const useRealAPI = shouldUseRealAPI();
+  console.log("🤖 AI Command Status:", {
+    isAuthenticated: accounts.length > 0,
+    accountType,
+    isReady,
+  });
 
   // Update parent component when commands change
   useEffect(() => {
@@ -221,31 +207,6 @@ export const AICommandInterface: React.FC<AICommandInterfaceProps> = ({
     };
   };
 
-  const executeDemoCommand = async (
-    command: string,
-    apps: string[]
-  ): Promise<AICommand> => {
-    console.log("🎭 Executing DEMO AI command:", command);
-
-    const processor = new DemoAICommandProcessor(documents);
-    const result = await processor.processCommand({
-      command,
-      apps,
-      connectedApps: [], // Not needed for seamless demo
-    });
-
-    return {
-      id: Date.now().toString(),
-      command,
-      status: "completed",
-      result: result.message,
-      timestamp: new Date(),
-      apps,
-      documentsUsed: result.documentsUsed,
-      outputFiles: result.outputFiles,
-    };
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!command.trim() || isProcessing) return;
@@ -269,20 +230,16 @@ export const AICommandInterface: React.FC<AICommandInterfaceProps> = ({
     try {
       let completedCommand: AICommand;
 
-      if (useRealAPI) {
+      if (isReady) {
         // Use real API processor for business accounts
         completedCommand = await executeRealCommand(
           newCommand.command,
           detectedApps
         );
-        console.log("✅ Real AI command completed:", completedCommand.result);
+        console.log("✅ AI command completed:", completedCommand.result);
       } else {
-        // Use demo processor for fallback
-        completedCommand = await executeDemoCommand(
-          newCommand.command,
-          detectedApps
-        );
-        console.log("✅ Demo AI command completed:", completedCommand.result);
+        // Show error for non-business accounts
+        throw new Error("Business Microsoft 365 account required for AI commands");
       }
 
       setCommands((prev) =>
@@ -295,11 +252,7 @@ export const AICommandInterface: React.FC<AICommandInterfaceProps> = ({
 
       dispatchToast(
         <Toast>
-          <ToastTitle>
-            {useRealAPI
-              ? "AI Command Completed Successfully"
-              : "Demo Command Completed"}
-          </ToastTitle>
+          <ToastTitle>AI Command Completed Successfully</ToastTitle>
         </Toast>,
         { intent: "success" }
       );
@@ -330,7 +283,7 @@ export const AICommandInterface: React.FC<AICommandInterfaceProps> = ({
   };
 
   const getExampleCommands = () => {
-    if (useRealAPI) {
+    if (isReady) {
       return [
         "Get my recent emails and create a summary",
         "Show me my meetings for today",
@@ -361,7 +314,7 @@ export const AICommandInterface: React.FC<AICommandInterfaceProps> = ({
         className="ms-card ms-card-elevated"
         style={{
           marginBottom: "var(--ms-spacing-xxl)",
-          background: useRealAPI
+          background: isReady
             ? "linear-gradient(135deg, var(--ms-color-themePrimary) 0%, var(--ms-color-themeDark) 100%)"
             : "linear-gradient(135deg, var(--ms-color-onenote) 0%, #5A1A78 100%)",
           border: "none",
@@ -387,18 +340,18 @@ export const AICommandInterface: React.FC<AICommandInterfaceProps> = ({
                 AI Assistant - Cross-App Commands
               </Text>
               <Badge
-                color={useRealAPI ? "success" : "severe"}
+                color={isReady ? "success" : "severe"}
                 size="small"
-                className={useRealAPI ? "ms-badge-success" : "ms-badge-warning"}
+                className={isReady ? "ms-badge-success" : "ms-badge-warning"}
                 style={{
-                  backgroundColor: useRealAPI
+                  backgroundColor: isReady
                     ? "var(--ms-color-success)"
                     : "#E879F9",
                   color: "white",
                   border: "none",
                 }}
               >
-                {useRealAPI ? "LIVE API" : "DEMO MODE"}
+                {isReady ? "LIVE API" : "REQUIRES BUSINESS ACCOUNT"}
               </Badge>
             </div>
           }
@@ -408,7 +361,7 @@ export const AICommandInterface: React.FC<AICommandInterfaceProps> = ({
                 className="ms-font-m"
                 style={{ color: "rgba(255, 255, 255, 0.8)", display: "block" }}
               >
-                {useRealAPI
+                {isReady
                   ? "Execute real commands across all your Microsoft 365 apps instantly"
                   : "Demonstrating AI capabilities with realistic sample documents and workflows"}
               </Text>
@@ -420,7 +373,7 @@ export const AICommandInterface: React.FC<AICommandInterfaceProps> = ({
                   marginTop: "4px",
                 }}
               >
-                {useRealAPI
+                {isReady
                   ? `Business Account: ${accountType} • All Microsoft 365 apps ready`
                   : `Using demo documents for simulation • All features work exactly as they would with real data`}
               </Text>
@@ -443,7 +396,7 @@ export const AICommandInterface: React.FC<AICommandInterfaceProps> = ({
                 value={command}
                 onChange={(e) => setCommand(e.target.value)}
                 placeholder={
-                  useRealAPI
+                  isReady
                     ? "e.g., Get my recent emails and create a summary in Word"
                     : "e.g., Extract budget data from Excel and create a Word summary with charts"
                 }
@@ -468,7 +421,7 @@ export const AICommandInterface: React.FC<AICommandInterfaceProps> = ({
                 className="ms-button-primary"
                 style={{
                   backgroundColor: "white",
-                  color: useRealAPI
+                  color: isReady
                     ? "var(--ms-color-themePrimary)"
                     : "var(--ms-color-onenote)",
                   border: "none",
@@ -513,7 +466,6 @@ export const AICommandInterface: React.FC<AICommandInterfaceProps> = ({
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -20 }}
                   transition={{ duration: 0.3 }}
-                  className="ms-motion-slideUpIn"
                 >
                   <Card
                     className="ms-card"
@@ -633,7 +585,7 @@ export const AICommandInterface: React.FC<AICommandInterfaceProps> = ({
                             )}
 
                             {/* Show documents used in demo mode */}
-                            {!useRealAPI &&
+                            {!isReady &&
                               cmd.documentsUsed &&
                               cmd.documentsUsed.length > 0 && (
                                 <div
@@ -673,7 +625,7 @@ export const AICommandInterface: React.FC<AICommandInterfaceProps> = ({
                               )}
 
                             {/* Show output files in demo mode */}
-                            {!useRealAPI &&
+                            {!isReady &&
                               cmd.outputFiles &&
                               cmd.outputFiles.length > 0 && (
                                 <div
@@ -720,7 +672,7 @@ export const AICommandInterface: React.FC<AICommandInterfaceProps> = ({
                               }}
                             >
                               {cmd.timestamp.toLocaleTimeString()} •{" "}
-                              {useRealAPI
+                              {isReady
                                 ? "Real API execution"
                                 : "Demo simulation"}
                             </Text>
@@ -749,7 +701,7 @@ export const AICommandInterface: React.FC<AICommandInterfaceProps> = ({
           <CardHeader
             header={
               <Text className="ms-font-l" style={{ fontWeight: 600 }}>
-                {useRealAPI
+                {isReady
                   ? "Try these real API commands:"
                   : "Try these demo commands:"}
               </Text>
@@ -778,7 +730,7 @@ export const AICommandInterface: React.FC<AICommandInterfaceProps> = ({
                       <Text
                         className="ms-font-s"
                         style={{
-                          color: useRealAPI
+                          color: isReady
                             ? "var(--ms-color-themePrimary)"
                             : "var(--ms-color-onenote)",
                         }}
@@ -793,7 +745,7 @@ export const AICommandInterface: React.FC<AICommandInterfaceProps> = ({
                   style={{
                     marginTop: "var(--ms-spacing-l)",
                     padding: "var(--ms-spacing-m)",
-                    backgroundColor: useRealAPI
+                    backgroundColor: isReady
                       ? "var(--ms-color-infoLight)"
                       : "var(--ms-color-infoLight)",
                     borderRadius: "var(--ms-borderRadius-medium)",
@@ -804,7 +756,7 @@ export const AICommandInterface: React.FC<AICommandInterfaceProps> = ({
                     className="ms-font-s"
                     style={{ color: "var(--ms-color-info)", fontWeight: 500 }}
                   >
-                    {useRealAPI ? (
+                    {isReady ? (
                       <>
                         🚀 <strong>Live API Mode:</strong> These commands will
                         execute real operations across all your Microsoft 365
