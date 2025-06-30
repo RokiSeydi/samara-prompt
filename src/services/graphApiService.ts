@@ -353,11 +353,14 @@ export class GraphApiService {
 
       console.log(`✅ Text file shell created: ${file.name} (ID: ${file.id})`);
 
-      // Upload the content
-      const textBuffer = Buffer.from(formattedContent, 'utf8');
+      // Upload the content using browser-compatible method
+      // Convert string to Uint8Array (browser equivalent of Buffer)
+      const encoder = new TextEncoder();
+      const textData = encoder.encode(formattedContent);
+      
       await this.client
         .api(`/me/drive/items/${file.id}/content`)
-        .put(textBuffer);
+        .put(textData);
 
       console.log(`✅ Document created successfully as text file`);
       console.log(`📝 Note: Created as .txt file for reliability - can be opened in Word or converted`);
