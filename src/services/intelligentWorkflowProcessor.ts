@@ -439,20 +439,20 @@ export class IntelligentWorkflowProcessor {
         // Log output creation
         await complianceLogger.logOutputCreation(
           complianceLogId,
-          sanitizedTitle.endsWith(".docx") ? sanitizedTitle : `${sanitizedTitle}.docx`,
-          "word",
+          sanitizedTitle.endsWith(".docx") ? sanitizedTitle.replace(".docx", ".txt") : `${sanitizedTitle}.txt`,
+          "text",
           "OneDrive",
           content.length,
-          "AI-generated Word document with Excel data integration"
+          "AI-generated text document with Excel data integration"
         );
 
         // Return a more helpful message with a link to open the document
-        const fileName = sanitizedTitle.endsWith(".docx") ? sanitizedTitle : `${sanitizedTitle}.docx`;
-        return `📝 Created Word document: "${fileName}" with ${
+        const fileName = sanitizedTitle.endsWith(".docx") ? sanitizedTitle.replace(".docx", ".txt") : `${sanitizedTitle}.txt`;
+        return `📝 Created document: "${fileName}" with ${
           content.includes("Financial Data")
             ? "integrated Excel financial data"
             : "comprehensive content"
-        }. The document is saved to your OneDrive and can be opened in Word Online or desktop Word.`;
+        }. The document is saved to your OneDrive as a text file that can be opened in any text editor or imported into Word.`;
       }
 
       case "format": {
