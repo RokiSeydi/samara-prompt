@@ -426,55 +426,49 @@ export const useGraphData = () => {
         id: 'demo-1',
         name: 'Q4 Budget Analysis.xlsx',
         type: 'excel',
-        lastModified: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+        lastModified: new Date(Date.now() - 2 * 60 * 60 * 1000),
         size: 2048576,
         webUrl: 'https://office.com/excel/demo1',
-        summary: 'Quarterly financial analysis with revenue projections, expense breakdowns, and profit margins. Includes interactive charts and budget forecasts for stakeholder presentations.'
       },
       {
         id: 'demo-2',
         name: 'Project Status Report.docx',
         type: 'word',
-        lastModified: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
+        lastModified: new Date(Date.now() - 4 * 60 * 60 * 1000),
         size: 1024000,
         webUrl: 'https://office.com/word/demo2',
-        summary: 'Comprehensive project status report with milestone tracking, risk assessment, and resource allocation. Contains detailed analysis and actionable recommendations.'
       },
       {
         id: 'demo-3',
         name: 'Team Presentation Q4.pptx',
         type: 'powerpoint',
-        lastModified: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(),
+        lastModified: new Date(Date.now() - 6 * 60 * 60 * 1000),
         size: 5242880,
         webUrl: 'https://office.com/powerpoint/demo3',
-        summary: 'Professional quarterly presentation with performance metrics, team achievements, and strategic roadmap. Features data visualizations and executive summary slides.'
       },
       {
         id: 'demo-4',
         name: 'Meeting Notes - Strategy Session.one',
         type: 'onenote',
-        lastModified: new Date(Date.now() - 8 * 60 * 60 * 1000).toISOString(),
+        lastModified: new Date(Date.now() - 8 * 60 * 60 * 1000),
         size: 512000,
         webUrl: 'https://office.com/onenote/demo4',
-        summary: 'Strategic planning session notes with action items, decision points, and follow-up tasks. Organized by priority with assigned owners and deadlines.'
       },
       {
         id: 'demo-5',
         name: 'Sales Dashboard.xlsx',
         type: 'excel',
-        lastModified: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(),
+        lastModified: new Date(Date.now() - 12 * 60 * 60 * 1000),
         size: 1536000,
         webUrl: 'https://office.com/excel/demo5',
-        summary: 'Interactive sales performance dashboard with KPI tracking, regional analysis, and trend forecasting. Contains automated reporting and data visualization.'
       },
       {
         id: 'demo-6',
         name: 'Product Proposal.docx',
         type: 'word',
-        lastModified: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+        lastModified: new Date(Date.now() - 24 * 60 * 60 * 1000),
         size: 2560000,
         webUrl: 'https://office.com/word/demo6',
-        summary: 'New product development proposal with market analysis, technical specifications, and implementation timeline. Includes competitive analysis and ROI projections.'
       }
     ];
   };
@@ -563,7 +557,6 @@ export const useGraphData = () => {
               lastModified: item.lastModifiedDateTime || item.lastUsed?.lastAccessedDateTime || new Date().toISOString(),
               size: item.size || 0,
               webUrl: item.webUrl || item.resourceReference?.webUrl || '#',
-              summary: generateDocumentSummary(fileName, docType),
             };
           });
 

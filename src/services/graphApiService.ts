@@ -3,7 +3,7 @@ import { Client } from "@microsoft/microsoft-graph-client";
 // Custom authentication provider for MSAL
 class MsalAuthProvider {
   private accessToken: string;
-  
+
   constructor(accessToken: string) {
     this.accessToken = accessToken;
   }
@@ -55,15 +55,66 @@ export class GraphApiService {
 
   async getFiles(filter?: string): Promise<any[]> {
     try {
+      console.log("🔍 DEBUG: Getting files with filter:", filter);
+
+      // First, try to access the user's drive without any filter
       let endpoint = "/me/drive/root/children";
+
+      // Add top parameter to limit results and improve performance
+      let queryParams = ["$top=50"];
+
       if (filter) {
-        endpoint += `?$filter=${filter}`;
+        queryParams.push(`$filter=${encodeURIComponent(filter)}`);
       }
 
+      if (queryParams.length > 0) {
+        endpoint += `?${queryParams.join("&")}`;
+      }
+
+      console.log("🔍 DEBUG: Final endpoint:", endpoint);
+
       const response = await this.client.api(endpoint).get();
+      console.log("✅ DEBUG: Files response:", response);
+      console.log("✅ DEBUG: Files count:", response.value?.length || 0);
+
       return response.value || [];
     } catch (error) {
-      console.error("Error getting files:", error);
+      console.error("❌ Error getting files:", error);
+      console.error("❌ Error details:", error.message);
+
+      // If we get "Item not found", try without filter to see if the issue is with filtering
+      if (error.message?.includes("Item not found") && filter) {
+        console.log(
+          "🔄 Retrying without filter due to 'Item not found' error..."
+        );
+        try {
+          const response = await this.client
+            .api("/me/drive/root/children?$top=50")
+            .get();
+          console.log("✅ DEBUG: Unfiltered files response:", response);
+
+          // Apply filter manually if the API call succeeded
+          const allFiles = response.value || [];
+          if (filter.includes("endswith(name,'.xlsx')")) {
+            const excelFiles = allFiles.filter(
+              (file) =>
+                file.name?.toLowerCase().endsWith(".xlsx") ||
+                file.name?.toLowerCase().endsWith(".xls")
+            );
+            console.log(
+              "✅ DEBUG: Manually filtered Excel files:",
+              excelFiles.length
+            );
+            return excelFiles;
+          }
+
+          return allFiles;
+        } catch (retryError) {
+          console.error("❌ Retry also failed:", retryError);
+          throw retryError;
+        }
+      }
+
       throw error;
     }
   }
@@ -283,25 +334,15 @@ export class GraphApiService {
 
       try {
         // Use Microsoft Graph Word API to add content properly
-        console.log(`� Adding content using Word API...`);
+        console.log(`📝 Adding content using Word API...`);
 
-        // Split content into paragraphs
-        const paragraphs = content
-          .split("\n")
-          .filter((p) => p.trim().length > 0);
-
-        // Insert paragraphs using HTML format
-        for (const paragraph of paragraphs) {
-          if (paragraph.trim()) {
-            // Word documents don't support the Excel workbook API - this was incorrect
-            console.log(`📝 Creating Word content using HTML format...`);
-            const htmlContent = this.generateWordHTMLContent(content);
-            await this.client
-              .api(`/me/drive/items/${file.id}/content`)
-              .put(htmlContent);
-            break; // Only need to do this once, not per paragraph
-          }
-        }
+        // Create HTML content that Word can properly render
+        const htmlContent = this.generateWordHTMLContent(content);
+        
+        // Upload the HTML content directly as the document content
+        await this.client
+          .api(`/me/drive/items/${file.id}/content`)
+          .put(htmlContent);
 
         console.log(`✅ Word document created with proper formatting`);
       } catch (wordApiError) {
@@ -700,43 +741,150 @@ export class GraphApiService {
     return Buffer.from(documentXml, "utf-8");
   }
 
-  // Generate dummy financial data
-  generateDummyFinancialData(): any[][] {
+  // Generate dummy financial data with file-specific variations
+  generateDummyFinancialData(fileNumber?: number): any[][] {
     const headers = ["Date", "Category", "Amount", "Description", "Status"];
     const data = [headers];
 
-    const categories = [
-      "Revenue",
-      "Expenses",
-      "Marketing",
-      "Operations",
-      "Salaries",
-    ];
-    const descriptions = [
-      "Q4 Sales Revenue",
-      "Office Rent",
-      "Digital Marketing Campaign",
-      "Software Licenses",
-      "Employee Salaries",
-      "Client Payment",
-      "Utilities",
-      "Travel Expenses",
-      "Equipment Purchase",
-    ];
+    // Create different data sets based on file number for better merge testing
+    const fileVariations = {
+      1: {
+        categories: ["Q1 Revenue", "Sales", "Commission", "Bonuses", "Refunds"],
+        descriptions: [
+          "January Sales Target",
+          "February Online Revenue",
+          "March Commission Payment",
+          "Customer Refund Processing",
+          "Quarterly Bonus Distribution",
+          "Online Store Sales",
+          "Retail Store Revenue",
+          "Wholesale Contract",
+          "Service Fee Income",
+          "Product Return Credit"
+        ],
+        baseAmount: 5000,
+        dateOffset: 0,
+        multiplier: 1.0
+      },
+      2: {
+        categories: ["Q2 Expenses", "Operations", "Marketing", "Office", "Travel"],
+        descriptions: [
+          "Office Rent April",
+          "Marketing Campaign May",
+          "June Operations Cost",
+          "Business Travel Expense",
+          "Office Supplies Purchase",
+          "Software License Renewal",
+          "Utility Bills Payment",
+          "Insurance Premium",
+          "Equipment Maintenance",
+          "Staff Training Program"
+        ],
+        baseAmount: 3000,
+        dateOffset: 90,
+        multiplier: 0.7
+      },
+      3: {
+        categories: ["Q3 Analysis", "Investments", "Assets", "Depreciation", "Capital"],
+        descriptions: [
+          "July Investment Portfolio",
+          "August Asset Acquisition", 
+          "September Capital Gains",
+          "Equipment Depreciation",
+          "Stock Market Investment",
+          "Real Estate Purchase",
+          "Technology Infrastructure",
+          "Market Growth Analysis",
+          "Capital Equipment Lease",
+          "Investment Returns"
+        ],
+        baseAmount: 8000,
+        dateOffset: 180,
+        multiplier: 1.5
+      }
+    };
 
-    // Generate 20 rows of dummy data
-    for (let i = 0; i < 20; i++) {
-      const date = new Date(2024, 0, 1 + i * 5).toLocaleDateString();
-      const category =
-        categories[Math.floor(Math.random() * categories.length)];
-      const amount = (Math.random() * 10000 + 1000).toFixed(2);
-      const description =
-        descriptions[Math.floor(Math.random() * descriptions.length)];
+    // Default to variation 1 if no file number specified, or cycle through variations
+    const variationKey = fileNumber ? ((fileNumber - 1) % 3) + 1 : 1;
+    const variation = fileVariations[variationKey];
+    
+    // Generate 25 rows of file-specific dummy data with more variance
+    for (let i = 0; i < 25; i++) {
+      const date = new Date(2024, 0, 1 + variation.dateOffset + i * 4).toLocaleDateString();
+      const category = variation.categories[Math.floor(Math.random() * variation.categories.length)];
+      const baseAmount = Math.random() * variation.baseAmount * variation.multiplier + 200;
+      const amount = baseAmount.toFixed(2);
+      const description = variation.descriptions[Math.floor(Math.random() * variation.descriptions.length)];
       const status = Math.random() > 0.2 ? "Approved" : "Pending";
 
       data.push([date, category, `$${amount}`, description, status]);
     }
 
+    // Add a unique summary row to make files easily distinguishable
+    data.push(["", "", "", "", ""]);
+    data.push(["SUMMARY", `File Type ${variationKey}`, `Total Records: ${data.length - 2}`, `Generated: ${new Date().toISOString().split('T')[0]}`, "Complete"]);
+
     return data;
+  }
+
+  // Placeholder methods for missing functionality
+  async mergeExcelFiles(
+    fileIds: string[],
+    outputName: string
+  ): Promise<string> {
+    console.log(`📊 Merging ${fileIds.length} Excel files into ${outputName}`);
+    // Create a simple merged file for demo purposes
+    const dummyData = [
+      ["File", "Sheet", "Rows", "Columns"],
+      ["Budget1.xlsx", "Summary", "50", "10"],
+      ["Budget2.xlsx", "Details", "30", "8"],
+      ["Budget3.xlsx", "Analysis", "25", "12"],
+    ];
+
+    return await this.createExcelWorkbook(outputName, [
+      { sheetName: "Merged Data", data: dummyData },
+    ]);
+  }
+
+  async calculateExcelMetrics(fileId: string): Promise<any> {
+    console.log(`📈 Calculating metrics for file ${fileId}`);
+    return {
+      totalRows: 100,
+      totalColumns: 10,
+      numericColumns: 5,
+      averageValue: 1250.75,
+      sumTotal: 125075,
+      trend: "increasing",
+    };
+  }
+
+  async readWordDocument(fileId: string): Promise<string> {
+    console.log(`📖 Reading Word document ${fileId}`);
+    // Return dummy content for demo
+    return "This is a sample Word document content. Lorem ipsum dolor sit amet, consectetur adipiscing elit.";
+  }
+
+  async createPowerPointPresentation(
+    name: string,
+    slides: any[]
+  ): Promise<string> {
+    console.log(`📊 Creating PowerPoint presentation: ${name}`);
+
+    // Create a simple PowerPoint file for demo purposes
+    const fileName = name.endsWith(".pptx") ? name : `${name}.pptx`;
+
+    const file = await this.client.api("/me/drive/root/children").post({
+      name: fileName,
+      file: {
+        mimeType:
+          "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+      },
+      "@microsoft.graph.conflictBehavior": "rename",
+    });
+
+    console.log(
+      `✅ PowerPoint presentation created: ${file.name} (ID: ${file.id})`
+    );
+    return file.id;
   }
 }

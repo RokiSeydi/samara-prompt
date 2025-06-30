@@ -1,4 +1,4 @@
-import type { Configuration, PopupRequest } from "@azure/msal-browser";
+import { Configuration, PopupRequest, LogLevel } from "@azure/msal-browser";
 
 // MSAL configuration
 export const msalConfig: Configuration = {
@@ -6,7 +6,7 @@ export const msalConfig: Configuration = {
     clientId: "52c720d1-0e02-45a4-a8e2-792a500c8fab", // Replace with your Azure AD app registration client ID
     authority:
       "https://login.microsoftonline.com/805f4fd4-5f9a-4d09-ba5b-89f0bd790eb1",
-    redirectUri: window.location.origin,
+    redirectUri: window.location.origin, // Automatically uses current domain
   },
   cache: {
     cacheLocation: "sessionStorage",
@@ -20,7 +20,7 @@ export const msalConfig: Configuration = {
         }
       },
       piiLoggingEnabled: false,
-      logLevel: "Verbose",
+      logLevel: LogLevel.Verbose,
     },
   },
 };

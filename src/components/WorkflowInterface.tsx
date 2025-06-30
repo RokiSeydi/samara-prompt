@@ -166,9 +166,21 @@ export const WorkflowInterface: React.FC = () => {
         });
 
       // Convert workflow results to user-friendly format
+      console.log("🚀 DEBUG: About to convert workflow results");
+      console.log("🚀 DEBUG: Result steps:", result.steps);
+      console.log(
+        "🚀 DEBUG: Access token length:",
+        response.accessToken.length
+      );
+
       const workflowResults = convertToWorkflowResults(
         result.steps,
         response.accessToken
+      );
+
+      console.log(
+        "✅ DEBUG: Final workflowResults from conversion:",
+        workflowResults
       );
 
       // Complete the workflow
@@ -184,6 +196,15 @@ export const WorkflowInterface: React.FC = () => {
         summary: result.summary,
         complianceLogId: result.complianceLogId,
       };
+
+      console.log(
+        "🏁 DEBUG: Final completedWorkflow.results:",
+        completedWorkflow.results
+      );
+      console.log(
+        "🏁 DEBUG: Final completedWorkflow.results.length:",
+        completedWorkflow.results.length
+      );
 
       setCurrentWorkflow(completedWorkflow);
       setRecentWorkflows((prev) => [completedWorkflow, ...prev.slice(0, 4)]);
@@ -261,6 +282,7 @@ export const WorkflowInterface: React.FC = () => {
   ): WorkflowResultItem[] => {
     const results: WorkflowResultItem[] = [];
 
+    console.log("🔄 🔄 🔄 CONVERT TO WORKFLOW RESULTS CALLED! 🔄 🔄 🔄");
     console.log("🔄 DEBUG: All steps to convert:", steps);
     console.log(
       "🔄 DEBUG: Completed steps:",
@@ -291,6 +313,18 @@ export const WorkflowInterface: React.FC = () => {
         let description = step.result;
 
         console.log("🔄 DEBUG: Checking result patterns for:", step.result);
+        console.log(
+          "🔄 DEBUG: Includes 'Found':",
+          step.result.includes("Found")
+        );
+        console.log(
+          "🔄 DEBUG: Includes 'documents':",
+          step.result.includes("documents")
+        );
+        console.log(
+          "🔄 DEBUG: Includes 'files':",
+          step.result.includes("files")
+        );
 
         if (
           step.result.includes("Found") &&
@@ -323,7 +357,88 @@ export const WorkflowInterface: React.FC = () => {
                 label: "View in OneDrive",
                 icon: <DocumentRegular />,
                 action: () =>
-                  window.open("https://onedrive.live.com", "_blank"),
+                  window.open(
+                    "https://m365.cloud.microsoft/onedrive",
+                    "_blank"
+                  ),
+              },
+            ],
+          });
+        } else if (
+          step.result.includes("No") &&
+          (step.result.includes("files found") ||
+            step.result.includes("documents found"))
+        ) {
+          console.log("🔄 DEBUG: Matched 'No files found' pattern");
+          // Handle case where no files were found
+          results.push({
+            type: "insight",
+            app: app,
+            title: `No ${
+              app.charAt(0).toUpperCase() + app.slice(1)
+            } Files Found`,
+            description: step.result,
+            quickActions: [
+              {
+                label: `Upload to ${
+                  app.charAt(0).toUpperCase() + app.slice(1)
+                }`,
+                icon: getAppIcon(app),
+                action: () =>
+                  window.open(
+                    `https://m365.cloud.microsoft/launch/${app}`,
+                    "_blank"
+                  ),
+                primary: true,
+              },
+              {
+                label: "Open OneDrive",
+                icon: <DocumentRegular />,
+                action: () =>
+                  window.open(
+                    "https://m365.cloud.microsoft/onedrive",
+                    "_blank"
+                  ),
+              },
+            ],
+          });
+        } else if (
+          step.result.includes("Unable to access") ||
+          step.result.includes("Permission denied") ||
+          step.result.includes("Error accessing")
+        ) {
+          console.log("🔄 DEBUG: Matched 'Access error' pattern");
+          // Handle access/permission errors
+          results.push({
+            type: "insight",
+            app: app,
+            title: `${app.charAt(0).toUpperCase() + app.slice(1)} Access Issue`,
+            description: step.result,
+            quickActions: [
+              {
+                label: "Check Permissions",
+                icon: <ShieldCheckmarkRegular />,
+                action: () => {
+                  dispatchToast(
+                    <Toast>
+                      <ToastTitle>
+                        💡 Make sure you've granted file access permissions and
+                        have files in your OneDrive
+                      </ToastTitle>
+                    </Toast>,
+                    { intent: "info" }
+                  );
+                },
+                primary: true,
+              },
+              {
+                label: "Open OneDrive",
+                icon: <DocumentRegular />,
+                action: () =>
+                  window.open(
+                    "https://m365.cloud.microsoft/onedrive",
+                    "_blank"
+                  ),
               },
             ],
           });
@@ -384,7 +499,10 @@ export const WorkflowInterface: React.FC = () => {
                     </Toast>,
                     { intent: "info" }
                   );
-                  window.open("https://onedrive.live.com", "_blank");
+                  window.open(
+                    "https://m365.cloud.microsoft/onedrive",
+                    "_blank"
+                  );
                 },
               },
             ],
@@ -658,7 +776,6 @@ export const WorkflowInterface: React.FC = () => {
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="ms-motion-slideDownIn"
         style={{
           textAlign: "center",
           marginBottom: "var(--ms-spacing-xxxl)",
@@ -889,7 +1006,6 @@ export const WorkflowInterface: React.FC = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
-                className="ms-motion-slideUpIn"
               >
                 <Card
                   className="ms-card ms-card-elevated"
@@ -937,7 +1053,7 @@ export const WorkflowInterface: React.FC = () => {
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: index * 0.1 }}
-                        className="ms-motion-slideUpIn"
+                        
                         style={{
                           display: "flex",
                           alignItems: "center",
@@ -1045,7 +1161,7 @@ export const WorkflowInterface: React.FC = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              className="ms-motion-slideUpIn"
+              
             >
               <Card
                 className="ms-card ms-card-elevated"
@@ -1153,7 +1269,7 @@ export const WorkflowInterface: React.FC = () => {
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ delay: index * 0.1 }}
-                        className="ms-motion-slideUpIn"
+                        
                       >
                         <Card
                           style={{

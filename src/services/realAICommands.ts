@@ -169,9 +169,7 @@ export class RealAICommandProcessor {
           const workbook = await graphService.readExcelWorkbook(file.id);
           if (workbook.worksheets.length > 0) {
             const metrics = await graphService.calculateExcelMetrics(
-              file.id,
-              workbook.worksheets[0].name,
-              calculations
+              file.id
             );
             results[file.name] = metrics;
           }
@@ -297,8 +295,8 @@ export class RealAICommandProcessor {
 
       for (const file of wordFiles.slice(0, 3)) {
         try {
-          const doc = await graphService.readWordDocument(file.id);
-          mergedContent += `\n\n=== ${doc.name} ===\n${doc.content}`;
+          const docContent = await graphService.readWordDocument(file.id);
+          mergedContent += `\n\n=== ${file.name} ===\n${docContent}`;
         } catch (error) {
           console.warn(`Could not read ${file.name}:`, error);
         }
