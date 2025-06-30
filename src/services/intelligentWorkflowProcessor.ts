@@ -364,20 +364,25 @@ export class IntelligentWorkflowProcessor {
 
       case "create": {
         // Extract title from parameters or prompt with better naming
-        let title = this.extractTitleFromPrompt(context.prompt, action.parameters);
-        
+        let title = this.extractTitleFromPrompt(
+          context.prompt,
+          action.parameters
+        );
+
         // If no title extracted, create a more descriptive default based on content type
         if (!title) {
-          if (context.prompt.toLowerCase().includes("excel") ||
-              context.prompt.toLowerCase().includes("financial") ||
-              context.prompt.toLowerCase().includes("data")) {
-            title = `Excel Data Summary Report - ${new Date().toLocaleDateString()}`;
+          if (
+            context.prompt.toLowerCase().includes("excel") ||
+            context.prompt.toLowerCase().includes("financial") ||
+            context.prompt.toLowerCase().includes("data")
+          ) {
+            title = `Excel Data Summary Report - ${this.formatDateForFileName()}`;
           } else if (context.prompt.toLowerCase().includes("summary")) {
-            title = `AI Summary Report - ${new Date().toLocaleDateString()}`;
+            title = `AI Summary Report - ${this.formatDateForFileName()}`;
           } else if (context.prompt.toLowerCase().includes("analysis")) {
-            title = `AI Analysis Report - ${new Date().toLocaleDateString()}`;
+            title = `AI Analysis Report - ${this.formatDateForFileName()}`;
           } else {
-            title = `AI Generated Report - ${new Date().toLocaleDateString()}`;
+            title = `AI Generated Report - ${this.formatDateForFileName()}`;
           }
         }
 
@@ -428,12 +433,13 @@ export class IntelligentWorkflowProcessor {
           content = this.generateReportContent(action.parameters, title);
         }
 
-        const fileId = await graphService.createWordDocument(title, content);
+        const sanitizedTitle = this.sanitizeFileName(title);
+        const fileId = await graphService.createWordDocument(sanitizedTitle, content);
 
         // Log output creation
         await complianceLogger.logOutputCreation(
           complianceLogId,
-          title.endsWith(".docx") ? title : `${title}.docx`,
+          sanitizedTitle.endsWith(".docx") ? sanitizedTitle : `${sanitizedTitle}.docx`,
           "word",
           "OneDrive",
           content.length,
@@ -441,7 +447,7 @@ export class IntelligentWorkflowProcessor {
         );
 
         // Return a more helpful message with a link to open the document
-        const fileName = title.endsWith(".docx") ? title : `${title}.docx`;
+        const fileName = sanitizedTitle.endsWith(".docx") ? sanitizedTitle : `${sanitizedTitle}.docx`;
         return `📝 Created Word document: "${fileName}" with ${
           content.includes("Financial Data")
             ? "integrated Excel financial data"
@@ -495,12 +501,13 @@ export class IntelligentWorkflowProcessor {
           mergedContent += `\n\n=== ${file.name} ===\n[Document content would be merged here]`;
         }
 
-        await graphService.createWordDocument(mergedName, mergedContent);
+        const sanitizedMergedName = this.sanitizeFileName(mergedName);
+        await graphService.createWordDocument(sanitizedMergedName, mergedContent);
 
         // Log merged output creation
         await complianceLogger.logOutputCreation(
           complianceLogId,
-          mergedName,
+          sanitizedMergedName,
           "word",
           "OneDrive",
           mergedContent.length,
@@ -510,7 +517,7 @@ export class IntelligentWorkflowProcessor {
         return `📄 Merged ${Math.min(
           3,
           mergeFiles.length
-        )} Word documents into "${mergedName}"`;
+        )} Word documents into "${sanitizedMergedName}"`;
       }
 
       default:
@@ -733,12 +740,13 @@ export class IntelligentWorkflowProcessor {
 
               // Handle specific error types - be more specific about what constitutes a "locked" file
               const errorMessage = readError.message?.toLowerCase() || "";
-              const isLocked = 
+              const isLocked =
                 errorMessage.includes("locked for editing") ||
                 errorMessage.includes("file is locked") ||
                 errorMessage.includes("opened exclusively") ||
                 errorMessage.includes("in use by another process") ||
-                (readError.code === "Locked" || readError.status === 423);
+                readError.code === "Locked" ||
+                readError.status === 423;
 
               if (isLocked) {
                 console.log("📊 DEBUG: File is locked, skipping:", file.name);
@@ -761,7 +769,10 @@ export class IntelligentWorkflowProcessor {
                 ]);
               } else {
                 // For non-lock errors, try to include basic file info but don't skip completely
-                console.log("📊 DEBUG: Error reading file but not locked, adding basic info:", file.name);
+                console.log(
+                  "📊 DEBUG: Error reading file but not locked, adding basic info:",
+                  file.name
+                );
                 const lastModified = new Date(
                   file.lastModifiedDateTime
                 ).toLocaleDateString();
@@ -999,22 +1010,23 @@ export class IntelligentWorkflowProcessor {
         ];
 
         // Note: This creates a placeholder file - full PowerPoint API integration would be needed for actual slides
+        const sanitizedPresentationName = this.sanitizeFileName(presentationName);
         const fileId = await graphService.createWordDocument(
-          presentationName,
+          sanitizedPresentationName,
           "PowerPoint presentation content"
         );
 
         // Log output creation
         await complianceLogger.logOutputCreation(
           complianceLogId,
-          presentationName,
+          sanitizedPresentationName,
           "powerpoint",
           "OneDrive",
           2048000, // Estimated size
           "AI-generated presentation with data insights"
         );
 
-        return `📊 Created PowerPoint presentation: "${presentationName}" with ${slides.length} slides`;
+        return `📊 Created PowerPoint presentation: "${sanitizedPresentationName}" with ${slides.length} slides`;
       }
 
       default:
@@ -1461,17 +1473,35 @@ Your Microsoft 365 environment has been updated with complete compliance documen
     if (numberMatch) {
       return parseInt(numberMatch[1], 10);
     }
-    
+
     // If no number found, generate based on hash of filename for consistency
     let hash = 0;
     for (let i = 0; i < fileName.length; i++) {
       const char = fileName.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
+      hash = (hash << 5) - hash + char;
       hash = hash & hash; // Convert to 32-bit integer
     }
-    
+
     // Return a number between 1-3 based on hash
     return Math.abs(hash % 3) + 1;
+  }
+
+  // Helper method to format dates safely for file names (no forward slashes)
+  private formatDateForFileName(date: Date = new Date()): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  // Helper method to sanitize filenames (remove invalid characters)
+  private sanitizeFileName(filename: string): string {
+    // Remove or replace invalid characters for OneDrive/SharePoint filenames
+    // Invalid chars: / \ : * ? " < > |
+    return filename
+      .replace(/[/\\:*?"<>|]/g, '-')
+      .replace(/\s+/g, ' ')
+      .trim();
   }
 }
 

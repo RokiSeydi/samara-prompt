@@ -249,9 +249,15 @@ export const AICommandInterface: React.FC<AICommandInterfaceProps> = ({
         );
         console.log("✅ AI command completed:", completedCommand);
       } else {
-        console.log("❌ Not ready for real API:", { isReady, accountType, accountsLength: accounts.length });
+        console.log("❌ Not ready for real API:", {
+          isReady,
+          accountType,
+          accountsLength: accounts.length,
+        });
         // Show error for non-business accounts
-        throw new Error("Business Microsoft 365 account required for AI commands");
+        throw new Error(
+          "Business Microsoft 365 account required for AI commands"
+        );
       }
 
       console.log("🔄 Updating commands with completed result:", {

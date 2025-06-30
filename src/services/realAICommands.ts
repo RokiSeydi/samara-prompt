@@ -168,9 +168,7 @@ export class RealAICommandProcessor {
         try {
           const workbook = await graphService.readExcelWorkbook(file.id);
           if (workbook.worksheets.length > 0) {
-            const metrics = await graphService.calculateExcelMetrics(
-              file.id
-            );
+            const metrics = await graphService.calculateExcelMetrics(file.id);
             results[file.name] = metrics;
           }
         } catch (error) {

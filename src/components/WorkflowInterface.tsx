@@ -1053,7 +1053,6 @@ export const WorkflowInterface: React.FC = () => {
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: index * 0.1 }}
-                        
                         style={{
                           display: "flex",
                           alignItems: "center",
@@ -1161,7 +1160,6 @@ export const WorkflowInterface: React.FC = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              
             >
               <Card
                 className="ms-card ms-card-elevated"
@@ -1269,7 +1267,6 @@ export const WorkflowInterface: React.FC = () => {
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ delay: index * 0.1 }}
-                        
                       >
                         <Card
                           style={{

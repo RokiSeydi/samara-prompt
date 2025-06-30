@@ -338,7 +338,7 @@ export class GraphApiService {
 
         // Create HTML content that Word can properly render
         const htmlContent = this.generateWordHTMLContent(content);
-        
+
         // Upload the HTML content directly as the document content
         await this.client
           .api(`/me/drive/items/${file.id}/content`)
@@ -760,14 +760,20 @@ export class GraphApiService {
           "Retail Store Revenue",
           "Wholesale Contract",
           "Service Fee Income",
-          "Product Return Credit"
+          "Product Return Credit",
         ],
         baseAmount: 5000,
         dateOffset: 0,
-        multiplier: 1.0
+        multiplier: 1.0,
       },
       2: {
-        categories: ["Q2 Expenses", "Operations", "Marketing", "Office", "Travel"],
+        categories: [
+          "Q2 Expenses",
+          "Operations",
+          "Marketing",
+          "Office",
+          "Travel",
+        ],
         descriptions: [
           "Office Rent April",
           "Marketing Campaign May",
@@ -778,17 +784,23 @@ export class GraphApiService {
           "Utility Bills Payment",
           "Insurance Premium",
           "Equipment Maintenance",
-          "Staff Training Program"
+          "Staff Training Program",
         ],
         baseAmount: 3000,
         dateOffset: 90,
-        multiplier: 0.7
+        multiplier: 0.7,
       },
       3: {
-        categories: ["Q3 Analysis", "Investments", "Assets", "Depreciation", "Capital"],
+        categories: [
+          "Q3 Analysis",
+          "Investments",
+          "Assets",
+          "Depreciation",
+          "Capital",
+        ],
         descriptions: [
           "July Investment Portfolio",
-          "August Asset Acquisition", 
+          "August Asset Acquisition",
           "September Capital Gains",
           "Equipment Depreciation",
           "Stock Market Investment",
@@ -796,25 +808,36 @@ export class GraphApiService {
           "Technology Infrastructure",
           "Market Growth Analysis",
           "Capital Equipment Lease",
-          "Investment Returns"
+          "Investment Returns",
         ],
         baseAmount: 8000,
         dateOffset: 180,
-        multiplier: 1.5
-      }
+        multiplier: 1.5,
+      },
     };
 
     // Default to variation 1 if no file number specified, or cycle through variations
     const variationKey = fileNumber ? ((fileNumber - 1) % 3) + 1 : 1;
     const variation = fileVariations[variationKey];
-    
+
     // Generate 25 rows of file-specific dummy data with more variance
     for (let i = 0; i < 25; i++) {
-      const date = new Date(2024, 0, 1 + variation.dateOffset + i * 4).toLocaleDateString();
-      const category = variation.categories[Math.floor(Math.random() * variation.categories.length)];
-      const baseAmount = Math.random() * variation.baseAmount * variation.multiplier + 200;
+      const date = new Date(
+        2024,
+        0,
+        1 + variation.dateOffset + i * 4
+      ).toLocaleDateString();
+      const category =
+        variation.categories[
+          Math.floor(Math.random() * variation.categories.length)
+        ];
+      const baseAmount =
+        Math.random() * variation.baseAmount * variation.multiplier + 200;
       const amount = baseAmount.toFixed(2);
-      const description = variation.descriptions[Math.floor(Math.random() * variation.descriptions.length)];
+      const description =
+        variation.descriptions[
+          Math.floor(Math.random() * variation.descriptions.length)
+        ];
       const status = Math.random() > 0.2 ? "Approved" : "Pending";
 
       data.push([date, category, `$${amount}`, description, status]);
@@ -822,7 +845,13 @@ export class GraphApiService {
 
     // Add a unique summary row to make files easily distinguishable
     data.push(["", "", "", "", ""]);
-    data.push(["SUMMARY", `File Type ${variationKey}`, `Total Records: ${data.length - 2}`, `Generated: ${new Date().toISOString().split('T')[0]}`, "Complete"]);
+    data.push([
+      "SUMMARY",
+      `File Type ${variationKey}`,
+      `Total Records: ${data.length - 2}`,
+      `Generated: ${new Date().toISOString().split("T")[0]}`,
+      "Complete",
+    ]);
 
     return data;
   }
