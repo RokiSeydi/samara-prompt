@@ -57,65 +57,70 @@ export class GraphApiService {
     try {
       console.log("🔍 DEBUG: Getting files with filter:", filter);
 
-      // First, try to access the user's drive without any filter
-      let endpoint = "/me/drive/root/children";
-
-      // Add top parameter to limit results and improve performance
-      let queryParams = ["$top=50"];
-
+      // Strategy 1: Try with filter first
       if (filter) {
-        queryParams.push(`$filter=${encodeURIComponent(filter)}`);
-      }
-
-      if (queryParams.length > 0) {
-        endpoint += `?${queryParams.join("&")}`;
-      }
-
-      console.log("🔍 DEBUG: Final endpoint:", endpoint);
-
-      const response = await this.client.api(endpoint).get();
-      console.log("✅ DEBUG: Files response:", response);
-      console.log("✅ DEBUG: Files count:", response.value?.length || 0);
-
-      return response.value || [];
-    } catch (error) {
-      console.error("❌ Error getting files:", error);
-      console.error("❌ Error details:", error.message);
-
-      // If we get "Item not found", try without filter to see if the issue is with filtering
-      if (error.message?.includes("Item not found") && filter) {
-        console.log(
-          "🔄 Retrying without filter due to 'Item not found' error..."
-        );
         try {
-          const response = await this.client
-            .api("/me/drive/root/children?$top=50")
-            .get();
-          console.log("✅ DEBUG: Unfiltered files response:", response);
-
-          // Apply filter manually if the API call succeeded
-          const allFiles = response.value || [];
-          if (filter.includes("endswith(name,'.xlsx')")) {
-            const excelFiles = allFiles.filter(
-              (file) =>
-                file.name?.toLowerCase().endsWith(".xlsx") ||
-                file.name?.toLowerCase().endsWith(".xls")
-            );
-            console.log(
-              "✅ DEBUG: Manually filtered Excel files:",
-              excelFiles.length
-            );
-            return excelFiles;
-          }
-
-          return allFiles;
-        } catch (retryError) {
-          console.error("❌ Retry also failed:", retryError);
-          throw retryError;
+          const endpoint = `/me/drive/root/children?$top=50&$filter=${encodeURIComponent(filter)}`;
+          console.log("🔍 DEBUG: Trying filtered endpoint:", endpoint);
+          
+          const response = await this.client.api(endpoint).get();
+          console.log("✅ DEBUG: Filtered response success:", response.value?.length || 0, "files");
+          return response.value || [];
+        } catch (filterError) {
+          console.warn("⚠️ Filtered search failed, trying unfiltered:", filterError.message);
         }
       }
 
-      throw error;
+      // Strategy 2: Get all files and filter manually
+      console.log("🔍 DEBUG: Trying unfiltered approach...");
+      const response = await this.client.api("/me/drive/root/children?$top=50").get();
+      console.log("✅ DEBUG: Unfiltered response:", response.value?.length || 0, "total files");
+
+      const allFiles = response.value || [];
+      
+      if (!filter) {
+        return allFiles;
+      }
+
+      // Apply manual filtering
+      let filteredFiles = [];
+      if (filter.includes("endswith(name,'.xlsx')")) {
+        filteredFiles = allFiles.filter(
+          (file) =>
+            file.name?.toLowerCase().endsWith(".xlsx") ||
+            file.name?.toLowerCase().endsWith(".xls")
+        );
+        console.log("✅ DEBUG: Manually filtered Excel files:", filteredFiles.length);
+      } else if (filter.includes("endswith(name,'.docx')")) {
+        filteredFiles = allFiles.filter(
+          (file) =>
+            file.name?.toLowerCase().endsWith(".docx") ||
+            file.name?.toLowerCase().endsWith(".doc")
+        );
+        console.log("✅ DEBUG: Manually filtered Word files:", filteredFiles.length);
+      } else if (filter.includes("endswith(name,'.pptx')")) {
+        filteredFiles = allFiles.filter(
+          (file) =>
+            file.name?.toLowerCase().endsWith(".pptx") ||
+            file.name?.toLowerCase().endsWith(".ppt")
+        );
+        console.log("✅ DEBUG: Manually filtered PowerPoint files:", filteredFiles.length);
+      } else {
+        filteredFiles = allFiles;
+      }
+
+      return filteredFiles;
+    } catch (error) {
+      console.error("❌ Error getting files:", error);
+      console.error("❌ Error details:", {
+        message: error.message,
+        code: error.code,
+        status: error.status
+      });
+
+      // Return empty array instead of throwing for better user experience
+      console.log("⚠️ Returning empty array due to file access error");
+      return [];
     }
   }
 
@@ -175,6 +180,21 @@ export class GraphApiService {
       };
     } catch (error) {
       console.error("Error reading Excel workbook:", error);
+      console.error("Error details:", {
+        message: error.message,
+        code: error.code,
+        status: error.status,
+        fileId
+      });
+      
+      // Add more specific error information
+      if (error.status === 423 || error.code === "notAllowed") {
+        const enhancedError = new Error(`File is locked or in use: ${error.message}`) as any;
+        enhancedError.code = "Locked";
+        enhancedError.status = 423;
+        throw enhancedError;
+      }
+      
       throw error;
     }
   }

@@ -632,15 +632,17 @@ export class IntelligentWorkflowProcessor {
         console.log("📊 DEBUG: Starting Excel merge action");
 
         try {
+          console.log("📊 DEBUG: Attempting to get Excel files...");
           const mergeFiles = await graphService.getExcelFiles();
           console.log("📊 DEBUG: Found files to merge:", mergeFiles.length);
+          console.log("📊 DEBUG: File details:", mergeFiles.map(f => ({ name: f.name, id: f.id })));
 
           if (mergeFiles.length === 0) {
-            return "📊 No Excel files found to merge. Please upload some Excel files first.";
+            return "📊 No Excel files found in your OneDrive. Please upload some Excel files (.xlsx or .xls) to your OneDrive root folder and try again.";
           }
 
           if (mergeFiles.length < 2) {
-            return "📊 Found only 1 Excel file. Need at least 2 files to merge. Please upload more Excel files.";
+            return `📊 Found only 1 Excel file: "${mergeFiles[0]?.name}". Need at least 2 files to merge. Please upload more Excel files to your OneDrive.`;
           }
 
           // Extract the desired filename from the action parameters or context
@@ -875,21 +877,32 @@ export class IntelligentWorkflowProcessor {
           return resultMessage;
         } catch (error) {
           console.error("📊 ERROR: Failed to merge Excel files:", error);
+          console.error("📊 ERROR: Error details:", {
+            message: error.message,
+            code: error.code,
+            status: error.status
+          });
 
-          if (error.message?.includes("Item not found")) {
-            return "📊 Unable to access Excel files for merging. Please ensure you have Excel files in your OneDrive and try again.";
+          // Handle different error types more specifically
+          if (error.message?.includes("Item not found") || error.code === "itemNotFound") {
+            return "📊 No Excel files found in your OneDrive. Please upload some Excel files (.xlsx or .xls) to your OneDrive root folder and try again.";
           } else if (
             error.message?.includes("Forbidden") ||
-            error.message?.includes("Unauthorized")
+            error.message?.includes("Unauthorized") ||
+            error.code === "Forbidden"
           ) {
-            return "📊 Permission denied when trying to merge files. Please check your file access permissions.";
+            return "📊 Permission denied when trying to access files. Please check your file access permissions and try again.";
           } else if (
             error.message?.includes("locked") ||
-            error.message?.includes("Locked")
+            error.message?.includes("Locked") ||
+            error.code === "notAllowed" ||
+            error.status === 423
           ) {
             return "📊 Cannot merge files because one or more Excel files are currently locked (likely open in Excel desktop app). Please close all Excel files and try again.";
+          } else if (error.message?.includes("InvalidArgument") || error.code === "InvalidArgument") {
+            return "📊 There was an issue reading the Excel file format. Please ensure your Excel files are valid .xlsx or .xls files and try again.";
           } else {
-            return `📊 Error merging Excel files: ${error.message}. Please try again or contact support if the issue persists.`;
+            return `📊 Error merging Excel files: ${error.message || 'Unknown error'}. Please check that you have Excel files in your OneDrive and try again.`;
           }
         }
       }
