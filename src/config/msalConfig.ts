@@ -1,4 +1,5 @@
 import type { Configuration, PopupRequest } from "@azure/msal-browser";
+import { LogLevel } from "@azure/msal-browser";
 
 // MSAL configuration
 export const msalConfig: Configuration = {
@@ -20,7 +21,7 @@ export const msalConfig: Configuration = {
         }
       },
       piiLoggingEnabled: false,
-      logLevel: "Verbose",
+      logLevel: LogLevel.Verbose,
     },
   },
 };

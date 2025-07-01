@@ -68,7 +68,6 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="ms-motion-fadeIn"
         >
           {/* SAMARA AI Logo */}
           <motion.div
@@ -153,7 +152,6 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
           >
             <motion.div
               whileHover={{ scale: 1.05 }}
-              className="ms-card"
               style={{
                 display: "flex",
                 flexDirection: "column",
@@ -198,7 +196,6 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
 
             <motion.div
               whileHover={{ scale: 1.05 }}
-              className="ms-card"
               style={{
                 display: "flex",
                 flexDirection: "column",
@@ -243,7 +240,6 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
 
             <motion.div
               whileHover={{ scale: 1.05 }}
-              className="ms-card"
               style={{
                 display: "flex",
                 flexDirection: "column",

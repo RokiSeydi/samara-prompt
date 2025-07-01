@@ -739,4 +739,349 @@ export class GraphApiService {
 
     return data;
   }
+
+  // ==================== EXCEL ANALYSIS & FORMULAS ====================
+
+  async analyzeExcelData(fileId: string, columnName?: string): Promise<{
+    statistics: {
+      best: any;
+      worst: any;
+      average: number;
+      sum: number;
+      count: number;
+      median: number;
+    };
+    data: any[][];
+    columnIndex: number;
+    columnName: string;
+  } | null> {
+    try {
+      console.log(`📊 Analyzing Excel data in file: ${fileId}`);
+      
+      const workbook = await this.readExcelWorkbook(fileId);
+      
+      // Find the worksheet with the most data
+      let targetWorksheet = workbook.worksheets[0];
+      for (const ws of workbook.worksheets) {
+        if (ws.data && ws.data.length > targetWorksheet.data.length) {
+          targetWorksheet = ws;
+        }
+      }
+      
+      if (!targetWorksheet.data || targetWorksheet.data.length === 0) {
+        console.log("No data found in Excel file");
+        return null;
+      }
+      
+      console.log(`📊 Analyzing worksheet: ${targetWorksheet.name} with ${targetWorksheet.data.length} rows`);
+      
+      // Get headers (first row)
+      const headers = targetWorksheet.data[0] || [];
+      const dataRows = targetWorksheet.data.slice(1); // Skip header row
+      
+      // Find the column to analyze
+      let columnIndex = -1;
+      let analysisColumnName = "Value";
+      
+      if (columnName) {
+        // User specified a column name
+        columnIndex = headers.findIndex(header => 
+          header && header.toString().toLowerCase().includes(columnName.toLowerCase())
+        );
+        if (columnIndex >= 0) {
+          analysisColumnName = headers[columnIndex].toString();
+        }
+      }
+      
+      // If no column specified or found, find the first numeric column
+      if (columnIndex === -1) {
+        for (let i = 0; i < headers.length; i++) {
+          const columnValues = dataRows.map(row => row[i]).filter(val => val != null);
+          const numericValues = columnValues.filter(val => !isNaN(Number(val)));
+          
+          if (numericValues.length > columnValues.length * 0.5) { // At least 50% numeric
+            columnIndex = i;
+            analysisColumnName = headers[i] ? headers[i].toString() : `Column ${i + 1}`;
+            break;
+          }
+        }
+      }
+      
+      if (columnIndex === -1) {
+        console.log("No numeric column found for analysis");
+        return null;
+      }
+      
+      console.log(`📊 Analyzing column: ${analysisColumnName} (index ${columnIndex})`);
+      
+      // Extract numeric values from the target column
+      const columnValues = dataRows
+        .map(row => row[columnIndex])
+        .filter(val => val != null && !isNaN(Number(val)))
+        .map(val => Number(val));
+      
+      if (columnValues.length === 0) {
+        console.log("No numeric values found in target column");
+        return null;
+      }
+      
+      console.log(`📊 Found ${columnValues.length} numeric values to analyze`);
+      
+      // Calculate statistics
+      const sortedValues = [...columnValues].sort((a, b) => a - b);
+      const sum = columnValues.reduce((acc, val) => acc + val, 0);
+      const average = sum / columnValues.length;
+      const median = sortedValues.length % 2 === 0
+        ? (sortedValues[sortedValues.length / 2 - 1] + sortedValues[sortedValues.length / 2]) / 2
+        : sortedValues[Math.floor(sortedValues.length / 2)];
+      
+      const statistics = {
+        best: Math.max(...columnValues),
+        worst: Math.min(...columnValues),
+        average: Math.round(average * 100) / 100, // Round to 2 decimal places
+        sum: Math.round(sum * 100) / 100,
+        count: columnValues.length,
+        median: Math.round(median * 100) / 100
+      };
+      
+      console.log(`📊 Analysis complete:`, statistics);
+      
+      return {
+        statistics,
+        data: targetWorksheet.data,
+        columnIndex,
+        columnName: analysisColumnName
+      };
+      
+    } catch (error) {
+      console.error("Error analyzing Excel data:", error);
+      return null;
+    }
+  }
+
+  async analyzeExcelFilesInFolder(folderName: string, columnName?: string): Promise<{
+    summary: {
+      best: any;
+      worst: any;
+      average: number;
+      totalFiles: number;
+      processedFiles: number;
+    };
+    fileResults: Array<{
+      fileName: string;
+      statistics: any;
+      columnName: string;
+    }>;
+  } | null> {
+    try {
+      console.log(`📊 Analyzing Excel files in folder: "${folderName}"`);
+      
+      const excelFiles = await this.getExcelFilesInFolder(folderName);
+      if (excelFiles.length === 0) {
+        console.log(`No Excel files found in folder "${folderName}"`);
+        return null;
+      }
+      
+      const fileResults: Array<{
+        fileName: string;
+        statistics: any;
+        columnName: string;
+      }> = [];
+      
+      const allValues: number[] = [];
+      
+      for (const file of excelFiles.slice(0, 10)) { // Limit to 10 files for performance
+        try {
+          console.log(`📊 Analyzing file: ${file.name}`);
+          
+          const analysis = await this.analyzeExcelData(file.id, columnName);
+          if (analysis) {
+            fileResults.push({
+              fileName: file.name,
+              statistics: analysis.statistics,
+              columnName: analysis.columnName
+            });
+            
+            // Collect all values for overall statistics
+            const fileData = await this.readExcelWorkbook(file.id);
+            for (const worksheet of fileData.worksheets) {
+              if (worksheet.data && worksheet.data.length > 1) {
+                const dataRows = worksheet.data.slice(1);
+                const numericValues = dataRows
+                  .map(row => row[analysis.columnIndex])
+                  .filter(val => val != null && !isNaN(Number(val)))
+                  .map(val => Number(val));
+                allValues.push(...numericValues);
+              }
+            }
+            
+            console.log(`✅ Successfully analyzed: ${file.name}`);
+          }
+        } catch (error) {
+          console.warn(`❌ Failed to analyze ${file.name}:`, error);
+        }
+      }
+      
+      if (fileResults.length === 0) {
+        console.log("No files could be analyzed");
+        return null;
+      }
+      
+      // Calculate overall summary statistics
+      const overallAverage = allValues.length > 0 
+        ? allValues.reduce((acc, val) => acc + val, 0) / allValues.length 
+        : 0;
+      
+      const summary = {
+        best: allValues.length > 0 ? Math.max(...allValues) : 0,
+        worst: allValues.length > 0 ? Math.min(...allValues) : 0,
+        average: Math.round(overallAverage * 100) / 100,
+        totalFiles: excelFiles.length,
+        processedFiles: fileResults.length
+      };
+      
+      console.log(`📊 Folder analysis complete:`, summary);
+      
+      return {
+        summary,
+        fileResults
+      };
+      
+    } catch (error) {
+      console.error(`Error analyzing Excel files in folder "${folderName}":`, error);
+      return null;
+    }
+  }
+
+  // ==================== FOLDER SEARCH OPERATIONS ====================
+
+  async findFolderByName(folderName: string): Promise<any | null> {
+    try {
+      console.log(`📁 Searching for folder named: "${folderName}"`);
+      
+      // First, search in the root directory
+      const rootFiles = await this.client.api("/me/drive/root/children").get();
+      const folders = rootFiles.value.filter((item: any) => 
+        item.folder && item.name.toLowerCase().includes(folderName.toLowerCase())
+      );
+      
+      if (folders.length > 0) {
+        console.log(`📁 Found folder in root: ${folders[0].name}`);
+        return folders[0];
+      }
+      
+      // If not found in root, search recursively
+      console.log(`📁 Folder not found in root, searching subdirectories...`);
+      const allFolders = await this.getAllFoldersRecursive();
+      const matchingFolder = allFolders.find((folder: any) => 
+        folder.name.toLowerCase().includes(folderName.toLowerCase())
+      );
+      
+      if (matchingFolder) {
+        console.log(`📁 Found folder: ${matchingFolder.name}`);
+        return matchingFolder;
+      }
+      
+      console.log(`📁 No folder found with name containing: "${folderName}"`);
+      return null;
+    } catch (error) {
+      console.error(`Error searching for folder "${folderName}":`, error);
+      return null;
+    }
+  }
+
+  async getAllFoldersRecursive(path: string = "/me/drive/root/children"): Promise<any[]> {
+    try {
+      const response = await this.client.api(path).get();
+      let allFolders: any[] = [];
+      
+      const items = response.value || [];
+      
+      for (const item of items) {
+        if (item.folder) {
+          allFolders.push(item);
+          if (item.folder.childCount > 0) {
+            try {
+              const subFolders = await this.getAllFoldersRecursive(`/me/drive/items/${item.id}/children`);
+              allFolders.push(...subFolders);
+            } catch (error) {
+              console.warn(`⚠️ Could not access subfolder ${item.name}:`, error.message);
+            }
+          }
+        }
+      }
+      
+      return allFolders;
+    } catch (error) {
+      console.error("Error in recursive folder search:", error);
+      return [];
+    }
+  }
+
+  async getFilesInFolder(folderId: string): Promise<any[]> {
+    try {
+      console.log(`📁 Getting files in folder ID: ${folderId}`);
+      const response = await this.client.api(`/me/drive/items/${folderId}/children`).get();
+      const files = response.value.filter((item: any) => item.file) || [];
+      
+      console.log(`📁 Found ${files.length} files in folder`);
+      return files;
+    } catch (error) {
+      console.error(`Error getting files in folder ${folderId}:`, error);
+      throw error;
+    }
+  }
+
+  async getExcelFilesInFolder(folderName: string): Promise<any[]> {
+    try {
+      console.log(`📊 Getting Excel files in folder: "${folderName}"`);
+      
+      const folder = await this.findFolderByName(folderName);
+      if (!folder) {
+        console.log(`📁 Folder "${folderName}" not found`);
+        return [];
+      }
+      
+      const allFiles = await this.getFilesInFolder(folder.id);
+      const excelFiles = allFiles.filter(file => 
+        file.name && (file.name.endsWith('.xlsx') || file.name.endsWith('.xls'))
+      );
+      
+      console.log(`📊 Found ${excelFiles.length} Excel files in folder "${folder.name}"`);
+      return excelFiles;
+    } catch (error) {
+      console.error(`Error getting Excel files in folder "${folderName}":`, error);
+      return [];
+    }
+  }
+
+  async getAllFilesInFolder(folderName: string): Promise<any[]> {
+    try {
+      console.log(`📁 Getting all files in folder: "${folderName}"`);
+      
+      const folder = await this.findFolderByName(folderName);
+      if (!folder) {
+        console.log(`📁 Folder "${folderName}" not found`);
+        return [];
+      }
+      
+      const files = await this.getFilesInFolder(folder.id);
+      console.log(`📁 Found ${files.length} files in folder "${folder.name}"`);
+      return files;
+    } catch (error) {
+      console.error(`Error getting files in folder "${folderName}":`, error);
+      return [];
+    }
+  }
+
+  // ==================== FILE INFO OPERATIONS ====================
+
+  async getFileInfo(fileId: string): Promise<any> {
+    try {
+      return await this.client.api(`/me/drive/items/${fileId}`).get();
+    } catch (error) {
+      console.error(`Error getting file info for ${fileId}:`, error);
+      throw error;
+    }
+  }
 }

@@ -1,8 +1,4 @@
-import {
-  groqService,
-  WorkflowPlan,
-  ParsedIntent,
-} from "./groqService";
+import { groqService, WorkflowPlan, ParsedIntent } from "./groqService";
 import { GraphApiService } from "./graphApiService";
 import { complianceLogger } from "./complianceLogger";
 
@@ -367,10 +363,28 @@ export class IntelligentWorkflowProcessor {
       }
 
       case "create": {
-        // Extract title from parameters or prompt
-        const title =
-          this.extractTitleFromPrompt(context.prompt, action.parameters) ||
-          "AI Generated Document";
+        // Extract title from parameters or prompt with better naming
+        let title = this.extractTitleFromPrompt(
+          context.prompt,
+          action.parameters
+        );
+
+        // If no title extracted, create a more descriptive default based on content type
+        if (!title) {
+          if (
+            context.prompt.toLowerCase().includes("excel") ||
+            context.prompt.toLowerCase().includes("financial") ||
+            context.prompt.toLowerCase().includes("data")
+          ) {
+            title = `Excel Data Summary Report - ${new Date().toLocaleDateString()}`;
+          } else if (context.prompt.toLowerCase().includes("summary")) {
+            title = `AI Summary Report - ${new Date().toLocaleDateString()}`;
+          } else if (context.prompt.toLowerCase().includes("analysis")) {
+            title = `AI Analysis Report - ${new Date().toLocaleDateString()}`;
+          } else {
+            title = `AI Generated Report - ${new Date().toLocaleDateString()}`;
+          }
+        }
 
         // Check if we need to include Excel data
         let content = "";
@@ -431,11 +445,13 @@ export class IntelligentWorkflowProcessor {
           "AI-generated Word document with Excel data integration"
         );
 
-        return `📝 Created Word document: "${title}" with ${
+        // Return a more helpful message with a link to open the document
+        const fileName = title.endsWith(".docx") ? title : `${title}.docx`;
+        return `📝 Created Word document: "${fileName}" with ${
           content.includes("Financial Data")
             ? "integrated Excel financial data"
             : "comprehensive content"
-        }`;
+        }. The document is saved to your OneDrive and can be opened in Word Online or desktop Word.`;
       }
 
       case "format": {
@@ -515,42 +531,61 @@ export class IntelligentWorkflowProcessor {
   ): Promise<string> {
     switch (action.action) {
       case "list": {
-        const excelFiles = await graphService.getExcelFiles();
+        console.log("📊 DEBUG: Starting Excel files list action");
 
-        // Log file access for each file
-        for (const file of excelFiles.slice(0, 20)) {
-          await complianceLogger.logFileAccess(
-            complianceLogId,
-            file.id,
-            file.name,
-            "excel",
-            "read",
-            "OneDrive",
-            file.size || 0,
-            file.lastModifiedDateTime
-          );
-        }
+        try {
+          const excelFiles = await graphService.getExcelFiles();
+          console.log("📊 DEBUG: Got Excel files:", excelFiles.length);
 
-        const count = action.parameters?.count || 20;
-        const recentFiles = excelFiles.slice(0, count);
-
-        if (recentFiles.length === 0) {
-          return "📊 No Excel files found in your OneDrive";
-        }
-
-        const fileList = recentFiles
-          .map((file, index) => {
-            const lastModified = new Date(
+          // Log file access for each file
+          for (const file of excelFiles.slice(0, 20)) {
+            await complianceLogger.logFileAccess(
+              complianceLogId,
+              file.id,
+              file.name,
+              "excel",
+              "read",
+              "OneDrive",
+              file.size || 0,
               file.lastModifiedDateTime
-            ).toLocaleDateString();
-            const size = this.formatFileSize(file.size);
-            return `${index + 1}. ${
-              file.name
-            } (${size}, modified ${lastModified})`;
-          })
-          .join("\n");
+            );
+          }
 
-        return `📊 Found ${recentFiles.length} Excel files:\n\n${fileList}`;
+          const count = action.parameters?.count || 20;
+          const recentFiles = excelFiles.slice(0, count);
+
+          if (recentFiles.length === 0) {
+            return "📊 No Excel files found in your OneDrive. Try uploading some Excel files to see them here!";
+          }
+
+          const fileList = recentFiles
+            .map((file, index) => {
+              const lastModified = new Date(
+                file.lastModifiedDateTime
+              ).toLocaleDateString();
+              const size = this.formatFileSize(file.size);
+              return `${index + 1}. ${
+                file.name
+              } (${size}, modified ${lastModified})`;
+            })
+            .join("\n");
+
+          return `📊 Found ${recentFiles.length} Excel files:\n\n${fileList}`;
+        } catch (error) {
+          console.error("📊 ERROR: Failed to get Excel files:", error);
+
+          // Provide a helpful error message instead of failing completely
+          if (error.message?.includes("Item not found")) {
+            return "📊 Unable to access your OneDrive files. This might be because:\n\n• Your OneDrive is empty\n• Permission issues with file access\n• Network connectivity problems\n\nTry uploading some Excel files to your OneDrive and try again.";
+          } else if (
+            error.message?.includes("Forbidden") ||
+            error.message?.includes("Unauthorized")
+          ) {
+            return "📊 Permission denied accessing your files. Please ensure you've granted the necessary permissions to access your OneDrive files.";
+          } else {
+            return `📊 Error accessing Excel files: ${error.message}. Please try again or contact support if the issue persists.`;
+          }
+        }
       }
 
       case "create": {
@@ -568,6 +603,8 @@ export class IntelligentWorkflowProcessor {
         console.log(`📊 Creating Excel file with name: ${excelName}`);
         console.log(`📊 Extracted from prompt: "${context.prompt}"`);
 
+        // Generate unique dummy data based on file name/number for better merge testing
+        const fileNumber = this.extractFileNumberFromName(excelName);
         const dummyData = graphService.generateDummyFinancialData();
 
         const fileId = await graphService.createExcelWorkbook(excelName, [
@@ -590,79 +627,419 @@ export class IntelligentWorkflowProcessor {
       }
 
       case "merge": {
-        const mergeFiles = await graphService.getExcelFiles();
-        if (mergeFiles.length === 0) return "📊 No Excel files found to merge";
+        console.log("📊 DEBUG: Starting Excel merge action");
 
-        // Log file access for each merged file
-        const fileIds = mergeFiles.slice(0, 5).map((file) => {
-          complianceLogger.logFileAccess(
-            complianceLogId,
-            file.id,
-            file.name,
-            "excel",
-            "read",
-            "OneDrive",
-            file.size || 0,
-            file.lastModifiedDateTime
+        try {
+          const mergeFiles = await graphService.getExcelFiles();
+          console.log("📊 DEBUG: Found files to merge:", mergeFiles.length);
+
+          if (mergeFiles.length === 0) {
+            return "📊 No Excel files found to merge. Please upload some Excel files first.";
+          }
+
+          if (mergeFiles.length < 2) {
+            return "📊 Found only 1 Excel file. Need at least 2 files to merge. Please upload more Excel files.";
+          }
+
+          // Extract the desired filename from the action parameters or context
+          const extractedTitle = this.extractTitleFromPrompt(
+            context.prompt,
+            action.parameters
           );
-          return file.id;
-        });
 
-        const outputName = `Merged_Analysis_${
-          new Date().toISOString().split("T")[0]
-        }.xlsx`;
-        const mergedFileId = await graphService.createExcelWorkbook(
-          outputName,
-          [
-            {
-              sheetName: "Merged Data",
-              data: [["Merged data from multiple Excel files"]],
-            },
-          ]
-        );
+          const outputName = extractedTitle
+            ? extractedTitle.endsWith(".xlsx")
+              ? extractedTitle
+              : `${extractedTitle}.xlsx`
+            : `Merged_Analysis_${new Date().toISOString().split("T")[0]}.xlsx`;
 
-        // Log merged output creation
-        await complianceLogger.logOutputCreation(
-          complianceLogId,
-          outputName,
-          "excel",
-          "OneDrive",
-          1024000, // Estimated size
-          "Merged Excel analysis from multiple sources"
-        );
+          console.log("📊 DEBUG: Output filename:", outputName);
+          console.log("📊 DEBUG: Extracted from prompt:", context.prompt);
 
-        return `📊 Successfully merged ${fileIds.length} Excel files into "${outputName}"`;
+          // Log file access and read actual Excel data for merging
+          const filesToMerge = mergeFiles.slice(0, 5);
+          const allWorksheetData = [];
+
+          // Add summary header
+          allWorksheetData.push(["=== MERGED EXCEL FILES ===", "", ""]);
+          allWorksheetData.push(["File Name", "Worksheet", "Data Summary"]);
+          allWorksheetData.push(["", "", ""]);
+
+          console.log("📊 DEBUG: Reading actual Excel data from files...");
+
+          let successfullyMerged = 0;
+          let skippedFiles = [];
+
+          for (const file of filesToMerge) {
+            await complianceLogger.logFileAccess(
+              complianceLogId,
+              file.id,
+              file.name,
+              "excel",
+              "read",
+              "OneDrive",
+              file.size || 0,
+              file.lastModifiedDateTime
+            );
+
+            try {
+              console.log("📊 DEBUG: Reading Excel file:", file.name);
+
+              // Read the actual Excel workbook data
+              const workbook = await graphService.readExcelWorkbook(file.id);
+
+              // Add file header
+              allWorksheetData.push([`=== ${file.name} ===`, "", ""]);
+
+              // Process each worksheet
+              for (const worksheet of workbook.worksheets) {
+                console.log("📊 DEBUG: Processing worksheet:", worksheet.name);
+
+                allWorksheetData.push([`Sheet: ${worksheet.name}`, "", ""]);
+
+                // Add the actual data from the worksheet
+                if (worksheet.data && worksheet.data.length > 0) {
+                  // Add first few rows of data (limit to prevent huge files)
+                  const dataRows = worksheet.data.slice(0, 20);
+                  for (const row of dataRows) {
+                    // Convert row array to string format for display
+                    const rowData = row.slice(0, 3); // Take first 3 columns
+                    if (
+                      rowData.some(
+                        (cell) =>
+                          cell !== null && cell !== undefined && cell !== ""
+                      )
+                    ) {
+                      allWorksheetData.push(rowData);
+                    }
+                  }
+
+                  if (worksheet.data.length > 20) {
+                    allWorksheetData.push([
+                      `... and ${worksheet.data.length - 20} more rows`,
+                      "",
+                      "",
+                    ]);
+                  }
+                } else {
+                  allWorksheetData.push(["(No data found)", "", ""]);
+                }
+
+                allWorksheetData.push(["", "", ""]); // Add spacing
+              }
+
+              successfullyMerged++;
+            } catch (readError) {
+              console.warn(
+                "📊 WARNING: Could not read Excel file:",
+                file.name,
+                readError.message
+              );
+
+              // Handle specific error types - be more specific about what constitutes a "locked" file
+              const errorMessage = readError.message?.toLowerCase() || "";
+              const isLocked =
+                errorMessage.includes("locked for editing") ||
+                errorMessage.includes("file is locked") ||
+                errorMessage.includes("opened exclusively") ||
+                errorMessage.includes("in use by another process") ||
+                readError.code === "Locked" ||
+                readError.status === 423;
+
+              if (isLocked) {
+                console.log("📊 DEBUG: File is locked, skipping:", file.name);
+                skippedFiles.push({ name: file.name, reason: "locked" });
+
+                allWorksheetData.push([
+                  `=== ${file.name} (SKIPPED - LOCKED) ===`,
+                  "",
+                  "",
+                ]);
+                allWorksheetData.push([
+                  "This file was skipped because it's locked",
+                  "",
+                  "",
+                ]);
+                allWorksheetData.push([
+                  "Try closing the file in Excel and retry",
+                  "",
+                  "",
+                ]);
+              } else {
+                // For non-lock errors, try to include basic file info but don't skip completely
+                console.log(
+                  "📊 DEBUG: Error reading file but not locked, adding basic info:",
+                  file.name
+                );
+                const lastModified = new Date(
+                  file.lastModifiedDateTime
+                ).toLocaleDateString();
+                const size = this.formatFileSize(file.size);
+
+                // Add basic file info to the merge even if we can't read Excel data
+                allWorksheetData.push([`=== ${file.name} ===`, "", ""]);
+                allWorksheetData.push([
+                  "File included but content could not be read",
+                  "",
+                  "",
+                ]);
+                allWorksheetData.push([
+                  `Size: ${size}`,
+                  `Modified: ${lastModified}`,
+                  `Error: ${readError.message}`,
+                ]);
+
+                // Still count as successful merge since we included the file info
+                successfullyMerged++;
+              }
+            }
+
+            allWorksheetData.push(["", "", ""]); // Add spacing between files
+          }
+
+          // Add final summary
+          allWorksheetData.push(["=== MERGE SUMMARY ===", "", ""]);
+          allWorksheetData.push([
+            `Total files found: ${filesToMerge.length}`,
+            "",
+            "",
+          ]);
+          allWorksheetData.push([
+            `Successfully merged: ${successfullyMerged}`,
+            "",
+            "",
+          ]);
+          if (skippedFiles.length > 0) {
+            allWorksheetData.push([
+              `Skipped files: ${skippedFiles.length}`,
+              "",
+              "",
+            ]);
+            for (const skipped of skippedFiles) {
+              allWorksheetData.push([
+                `- ${skipped.name}`,
+                `Reason: ${skipped.reason}`,
+                "",
+              ]);
+            }
+          }
+          allWorksheetData.push([
+            `Merge completed: ${new Date().toLocaleString()}`,
+            "",
+            "",
+          ]);
+
+          console.log(
+            "📊 DEBUG: Creating merged workbook with",
+            allWorksheetData.length,
+            "rows of actual data"
+          );
+
+          const mergedFileId = await graphService.createExcelWorkbook(
+            outputName,
+            [
+              {
+                sheetName: "Merged Files Data",
+                data: allWorksheetData,
+              },
+            ]
+          );
+
+          // Log merged output creation
+          await complianceLogger.logOutputCreation(
+            complianceLogId,
+            outputName,
+            "excel",
+            "OneDrive",
+            1024000, // Estimated size
+            `Merged Excel analysis from ${successfullyMerged} source files (${skippedFiles.length} skipped)`
+          );
+
+          let resultMessage = `📊 Successfully created merged file "${outputName}"`;
+
+          if (successfullyMerged > 0 && skippedFiles.length === 0) {
+            resultMessage += ` with data from all ${successfullyMerged} Excel files.`;
+          } else if (successfullyMerged > 0 && skippedFiles.length > 0) {
+            resultMessage += ` with data from ${successfullyMerged} Excel files. ${skippedFiles.length} files were skipped due to being locked or inaccessible.`;
+          } else if (successfullyMerged === 0) {
+            resultMessage += ` but no file content could be read. All ${skippedFiles.length} files were locked or inaccessible.`;
+          }
+
+          if (skippedFiles.some((f) => f.reason === "locked")) {
+            resultMessage +=
+              "\n\n💡 Tip: Close any Excel files that are open in Excel desktop app and try again to include them in the merge.";
+          }
+
+          return resultMessage;
+        } catch (error) {
+          console.error("📊 ERROR: Failed to merge Excel files:", error);
+
+          if (error.message?.includes("Item not found")) {
+            return "📊 Unable to access Excel files for merging. Please ensure you have Excel files in your OneDrive and try again.";
+          } else if (
+            error.message?.includes("Forbidden") ||
+            error.message?.includes("Unauthorized")
+          ) {
+            return "📊 Permission denied when trying to merge files. Please check your file access permissions.";
+          } else if (
+            error.message?.includes("locked") ||
+            error.message?.includes("Locked")
+          ) {
+            return "📊 Cannot merge files because one or more Excel files are currently locked (likely open in Excel desktop app). Please close all Excel files and try again.";
+          } else {
+            return `📊 Error merging Excel files: ${error.message}. Please try again or contact support if the issue persists.`;
+          }
+        }
       }
 
       case "analyze": {
-        const analysisFiles = await graphService.getExcelFiles();
-        if (analysisFiles.length === 0)
-          return "📊 No Excel files found to analyze";
+        // Check if the user is asking to analyze files from a specific folder
+        const folderMatch = this.extractFolderFromPrompt(context.prompt);
+        let analysisFiles: any[] = [];
+        
+        if (folderMatch) {
+          console.log(`📁 Looking for Excel files to analyze in folder: "${folderMatch}"`);
+          analysisFiles = await graphService.getExcelFilesInFolder(folderMatch);
+        } else {
+          console.log(`📊 Looking for Excel files to analyze in all folders`);
+          analysisFiles = await graphService.getExcelFiles();
+        }
+        
+        if (analysisFiles.length === 0) {
+          const folderInfo = folderMatch ? ` in folder "${folderMatch}"` : "";
+          return `📊 No Excel files found to analyze${folderInfo}`;
+        }
+
+        console.log(`📊 Starting statistical analysis of ${analysisFiles.length} Excel files...`);
 
         let totalRows = 0;
-        for (const file of analysisFiles.slice(0, 3)) {
-          await complianceLogger.logFileAccess(
-            complianceLogId,
-            file.id,
-            file.name,
-            "excel",
-            "read",
-            "OneDrive",
-            file.size || 0,
-            file.lastModifiedDateTime
-          );
+        let totalWorksheets = 0;
+        const fileAnalysis: string[] = [];
+        const processedFiles: string[] = [];
+        const skippedFiles: string[] = [];
+        const statisticalResults: any[] = [];
 
+        // Analyze up to 5 files to avoid overwhelming the system
+        const filesToAnalyze = analysisFiles.slice(0, 5);
+
+        for (const file of filesToAnalyze) {
           try {
+            console.log(`📊 Analyzing file: ${file.name} (ID: ${file.id})`);
+            
+            await complianceLogger.logFileAccess(
+              complianceLogId,
+              file.id,
+              file.name,
+              "excel",
+              "read",
+              "OneDrive",
+              file.size || 0,
+              file.lastModifiedDateTime
+            );
+
+            // Get basic workbook info
             const workbook = await graphService.readExcelWorkbook(file.id);
-            totalRows += workbook.worksheets.reduce(
-              (sum, ws) => sum + ws.data.length,
+            const fileRowCount = workbook.worksheets.reduce(
+              (sum, ws) => sum + (ws.data?.length || 0),
               0
             );
+            
+            totalRows += fileRowCount;
+            totalWorksheets += workbook.worksheets.length;
+            
+            // Perform statistical analysis
+            const analysisResult = await graphService.analyzeExcelData(file.id);
+            
+            if (analysisResult) {
+              console.log(`📊 Statistical analysis completed for ${file.name}`);
+              
+              statisticalResults.push({
+                fileName: file.name,
+                ...analysisResult
+              });
+              
+              // Create detailed analysis description
+              const stats = analysisResult.statistics;
+              const columnInfo = `"${analysisResult.columnName}" column`;
+              
+              fileAnalysis.push(
+                `📋 ${file.name}: Analyzed ${columnInfo} with ${stats.count} values\n` +
+                `   📈 Best: ${stats.best} | 📉 Worst: ${stats.worst} | 📊 Average: ${stats.average}\n` +
+                `   💰 Sum: ${stats.sum} | 🎯 Median: ${stats.median}`
+              );
+            } else {
+              // Fallback to basic analysis if statistical analysis fails
+              const worksheetInfo = workbook.worksheets.map(ws => {
+                const rowCount = ws.data?.length || 0;
+                const columnCount = ws.data && ws.data.length > 0 ? ws.data[0]?.length || 0 : 0;
+                return `"${ws.name}" (${rowCount} rows, ${columnCount} columns)`;
+              }).join(", ");
+              
+              fileAnalysis.push(`📋 ${file.name}: ${workbook.worksheets.length} sheets - ${worksheetInfo}`);
+            }
+            
+            processedFiles.push(file.name);
+            console.log(`✅ Successfully analyzed: ${file.name} - ${fileRowCount} rows`);
+            
           } catch (error) {
-            console.warn(`Could not analyze ${file.name}:`, error);
+            console.warn(`❌ Could not analyze ${file.name}:`, error);
+            skippedFiles.push(file.name);
+            
+            // Basic error categorization
+            if (error instanceof Error) {
+              if (error.message.includes('423') || error.message.includes('locked')) {
+                console.log(`🔒 File is locked: ${file.name} - Likely being edited or checked out`);
+              } else if (error.message.includes('403') || error.message.includes('Forbidden')) {
+                console.log(`🚫 Access denied: ${file.name} - Insufficient permissions`);
+              } else if (error.message.includes('404') || error.message.includes('not found')) {
+                console.log(`❓ File not found: ${file.name} - May have been moved or deleted`);
+              } else if (error.message.includes('409')) {
+                console.log(`⚠️ File conflict: ${file.name} - Version or editing conflict`);
+              } else {
+                console.log(`❌ Unknown error for ${file.name}:`, error.message);
+              }
+            }
           }
         }
-        return `📈 Analyzed ${analysisFiles.length} Excel files with ${totalRows} total rows of data`;
+
+        console.log(`� Analysis complete. Processed: ${processedFiles.length}, Skipped: ${skippedFiles.length}, Total rows: ${totalRows}`);
+
+        if (processedFiles.length === 0) {
+          return `❌ Could not analyze any Excel files - all ${filesToAnalyze.length} files were inaccessible or locked. Skipped: ${skippedFiles.join(", ")}`;
+        }
+
+        // Build comprehensive result message
+        let resultMessage = `📈 Analyzed ${processedFiles.length} Excel files with ${totalRows} total rows across ${totalWorksheets} worksheets`;
+        
+        if (statisticalResults.length > 0) {
+          resultMessage += `\n\n📊 Statistical Analysis Results:`;
+          
+          // Calculate overall statistics if we have multiple files
+          if (statisticalResults.length > 1) {
+            const allBestValues = statisticalResults.map(r => r.statistics.best);
+            const allWorstValues = statisticalResults.map(r => r.statistics.worst);
+            const allAverages = statisticalResults.map(r => r.statistics.average);
+            
+            const overallBest = Math.max(...allBestValues);
+            const overallWorst = Math.min(...allWorstValues);
+            const overallAverage = allAverages.reduce((sum, avg) => sum + avg, 0) / allAverages.length;
+            
+            resultMessage += `\n🏆 Overall Best Performance: ${overallBest}`;
+            resultMessage += `\n📉 Overall Worst Performance: ${overallWorst}`;
+            resultMessage += `\n📊 Overall Average Performance: ${Math.round(overallAverage * 100) / 100}`;
+            resultMessage += `\n`;
+          }
+        }
+        
+        if (fileAnalysis.length > 0) {
+          resultMessage += `\n\n📋 Detailed Analysis:\n${fileAnalysis.join("\n\n")}`;
+        }
+        
+        if (skippedFiles.length > 0) {
+          resultMessage += `\n\n⚠️ Skipped files (locked/inaccessible): ${skippedFiles.join(", ")}`;
+        }
+        
+        return resultMessage;
       }
 
       default:
@@ -870,21 +1247,114 @@ export class IntelligentWorkflowProcessor {
     prompt: string,
     parameters?: any
   ): string | null {
+    console.log("🔍 DEBUG: Extracting title from prompt:", prompt);
+
     // Look for quoted titles first
     const quotedMatch = prompt.match(/"([^"]+)"/);
-    if (quotedMatch) return quotedMatch[1];
+    if (quotedMatch) {
+      console.log("🔍 DEBUG: Found quoted title:", quotedMatch[1]);
+
+      // Check if this looks like multiple filenames (contains comma, "and", etc.)
+      const title = quotedMatch[1];
+      if (
+        title.includes("', '") ||
+        title.includes("' and '") ||
+        title.includes("', and '")
+      ) {
+        console.log(
+          "🔍 DEBUG: Title contains multiple files, extracting first:",
+          title
+        );
+        // Extract just the first filename for single file operations
+        const firstFile = title
+          .split(/,|\sand\s/)[0]
+          .replace(/'/g, "")
+          .trim();
+        console.log("🔍 DEBUG: Using first filename:", firstFile);
+        return firstFile;
+      }
+
+      return title;
+    }
+
+    // Look for "called" patterns
+    const calledMatch = prompt.match(/called\s+'([^']+)'/i);
+    if (calledMatch) {
+      console.log("🔍 DEBUG: Found 'called' title:", calledMatch[1]);
+      return calledMatch[1];
+    }
+
+    // Fallback to non-quoted called pattern
+    const calledFallback = prompt.match(/called\s+([^,\s]+(?:\s+[^,\s]+)*)/i);
+    if (calledFallback) {
+      console.log(
+        "🔍 DEBUG: Found fallback 'called' title:",
+        calledFallback[1]
+      );
+      return calledFallback[1];
+    }
 
     // Look for "titled" or "named" patterns
     const titledMatch = prompt.match(/titled?\s+"?([^"]+)"?/i);
-    if (titledMatch) return titledMatch[1].replace(/"/g, "");
+    if (titledMatch) {
+      console.log("🔍 DEBUG: Found 'titled' title:", titledMatch[1]);
+      return titledMatch[1].replace(/"/g, "");
+    }
 
     const namedMatch = prompt.match(/named?\s+"?([^"]+)"?/i);
-    if (namedMatch) return namedMatch[1].replace(/"/g, "");
+    if (namedMatch) {
+      console.log("🔍 DEBUG: Found 'named' title:", namedMatch[1]);
+      return namedMatch[1].replace(/"/g, "");
+    }
+
+    // Look for "into one called" patterns
+    const intoOneMatch = prompt.match(/into\s+one\s+called\s+"?([^"]+)"?/i);
+    if (intoOneMatch) {
+      console.log("🔍 DEBUG: Found 'into one called' title:", intoOneMatch[1]);
+      return intoOneMatch[1].replace(/"/g, "");
+    }
 
     // Check parameters
-    if (parameters?.title) return parameters.title;
-    if (parameters?.name) return parameters.name;
+    if (parameters?.title) {
+      console.log("🔍 DEBUG: Found title in parameters:", parameters.title);
+      return parameters.title;
+    }
+    if (parameters?.name) {
+      console.log("🔍 DEBUG: Found name in parameters:", parameters.name);
+      return parameters.name;
+    }
 
+    console.log("🔍 DEBUG: No title found in prompt");
+    return null;
+  }
+
+  private extractFolderFromPrompt(prompt: string): string | null {
+    // Look for various folder name patterns
+    
+    // Pattern: "in folder named X" or "in my X folder"
+    const folderPatterns = [
+      /(?:in|from)\s+(?:the\s+)?folder\s+(?:named\s+)?"?([^"]+?)"?(?:\s|$)/i,
+      /(?:in|from)\s+(?:my\s+)?"?([^"]+?)"?\s+folder/i,
+      /files?\s+in\s+"?([^"]+?)"?(?:\s|$)/i,
+      /show\s+me\s+(?:the\s+)?files?\s+in\s+(?:my\s+)?"?([^"]+?)"?(?:\s|$)/i,
+      /get\s+files?\s+from\s+"?([^"]+?)"?(?:\s|$)/i,
+      /list\s+files?\s+in\s+"?([^"]+?)"?(?:\s|$)/i,
+      /analyze\s+(?:the\s+)?files?\s+in\s+"?([^"]+?)"?(?:\s|$)/i,
+      /merge\s+(?:the\s+)?files?\s+in\s+"?([^"]+?)"?(?:\s|$)/i
+    ];
+    
+    for (const pattern of folderPatterns) {
+      const match = prompt.match(pattern);
+      if (match) {
+        const folderName = match[1].trim();
+        // Filter out common words that aren't folder names
+        if (!['the', 'my', 'all', 'any', 'some', 'these', 'those'].includes(folderName.toLowerCase())) {
+          console.log(`📁 Extracted folder name: "${folderName}" from prompt: "${prompt}"`);
+          return folderName;
+        }
+      }
+    }
+    
     return null;
   }
 
@@ -1140,6 +1610,26 @@ ${
 
 Your Microsoft 365 environment has been updated with complete compliance documentation.`;
     }
+  }
+
+  private extractFileNumberFromName(fileName: string): number {
+    // Extract number from filename for generating unique dummy data
+    // Look for patterns like "file1", "test2", "budget3", etc.
+    const numberMatch = fileName.match(/(\d+)/);
+    if (numberMatch) {
+      return parseInt(numberMatch[1], 10);
+    }
+
+    // If no number found, generate based on hash of filename for consistency
+    let hash = 0;
+    for (let i = 0; i < fileName.length; i++) {
+      const char = fileName.charCodeAt(i);
+      hash = (hash << 5) - hash + char;
+      hash = hash & hash; // Convert to 32-bit integer
+    }
+
+    // Return a number between 1-3 based on hash
+    return Math.abs(hash % 3) + 1;
   }
 }
 

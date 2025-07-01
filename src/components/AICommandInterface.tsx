@@ -27,7 +27,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { useMsal } from "@azure/msal-react";
 import { RealAICommandProcessor } from "../services/realAICommands";
-import { DemoAICommandProcessor } from "../services/demoAICommands";
+
 import { loginRequest } from "../config/msalConfig";
 import { useGraphData } from "../hooks/useGraphData";
 
@@ -225,24 +225,32 @@ export const AICommandInterface: React.FC<AICommandInterfaceProps> = ({
     command: string,
     apps: string[]
   ): Promise<AICommand> => {
-    console.log("🎭 Executing DEMO AI command:", command);
+    console.log("🎭 Executing real AI command:", command);
 
-    const processor = new DemoAICommandProcessor(documents);
+    const account = accounts[0];
+    if (!account) throw new Error("No account found");
+
+    const response = await instance.acquireTokenSilent({
+      ...loginRequest,
+      account: account,
+    });
+
+    const processor = new RealAICommandProcessor();
     const result = await processor.processCommand({
       command,
-      apps,
-      connectedApps: [], // Not needed for seamless demo
+      accessToken: response.accessToken,
+      availableDocuments: documents,
     });
 
     return {
       id: Date.now().toString(),
       command,
       status: "completed",
-      result: result.message,
+      result: result,
       timestamp: new Date(),
       apps,
-      documentsUsed: result.documentsUsed,
-      outputFiles: result.outputFiles,
+      documentsUsed: [],
+      outputFiles: [],
     };
   };
 
@@ -513,7 +521,6 @@ export const AICommandInterface: React.FC<AICommandInterfaceProps> = ({
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -20 }}
                   transition={{ duration: 0.3 }}
-                  className="ms-motion-slideUpIn"
                 >
                   <Card
                     className="ms-card"

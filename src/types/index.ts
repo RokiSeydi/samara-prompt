@@ -24,3 +24,13 @@ export interface WorkflowResult {
   summary: string;
   timestamp: Date;
 }
+
+export interface OfficeDocument {
+  id: string;
+  name: string;
+  type: string;
+  webUrl?: string;
+  lastModified?: string;
+  size?: number;
+  summary?: string;
+}

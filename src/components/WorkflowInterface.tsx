@@ -323,7 +323,10 @@ export const WorkflowInterface: React.FC = () => {
                 label: "View in OneDrive",
                 icon: <DocumentRegular />,
                 action: () =>
-                  window.open("https://onedrive.live.com", "_blank"),
+                  window.open(
+                    "https://m365.cloud.microsoft/onedrive",
+                    "_blank"
+                  ),
               },
             ],
           });
@@ -384,7 +387,10 @@ export const WorkflowInterface: React.FC = () => {
                     </Toast>,
                     { intent: "info" }
                   );
-                  window.open("https://onedrive.live.com", "_blank");
+                  window.open(
+                    "https://m365.cloud.microsoft/onedrive",
+                    "_blank"
+                  );
                 },
               },
             ],
@@ -678,7 +684,6 @@ export const WorkflowInterface: React.FC = () => {
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="ms-motion-slideDownIn"
         style={{
           textAlign: "center",
           marginBottom: "var(--ms-spacing-xxxl)",
@@ -909,7 +914,6 @@ export const WorkflowInterface: React.FC = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
-                className="ms-motion-slideUpIn"
               >
                 <Card
                   className="ms-card ms-card-elevated"
@@ -957,7 +961,6 @@ export const WorkflowInterface: React.FC = () => {
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: index * 0.1 }}
-                        className="ms-motion-slideUpIn"
                         style={{
                           display: "flex",
                           alignItems: "center",
@@ -1065,7 +1068,6 @@ export const WorkflowInterface: React.FC = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              className="ms-motion-slideUpIn"
             >
               <Card
                 className="ms-card ms-card-elevated"
@@ -1173,7 +1175,6 @@ export const WorkflowInterface: React.FC = () => {
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ delay: index * 0.1 }}
-                        className="ms-motion-slideUpIn"
                       >
                         <Card
                           style={{
