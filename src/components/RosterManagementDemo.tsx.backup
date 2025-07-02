@@ -1,0 +1,1361 @@
+import React, { useState } from "react";
+import {
+  Card,
+  Text,
+  Button,
+  Badge,
+  Spinner,
+  Textarea,
+  ProgressBar,
+} from "@fluentui/react-components";
+import {
+  VehicleSubwayRegular,
+  LocationRegular,
+  PeopleRegular,
+  DocumentRegular,
+  CheckmarkCircleRegular,
+  WarningRegular,
+  AlertRegular,
+  CalendarRegular,
+  PersonRunningRegular,
+  ClockRegular,
+  ShieldCheckmarkRegular,
+  FlashRegular,
+  SendRegular,
+  DocumentTableRegular,
+  ShareRegular,
+  EyeRegular,
+  MailRegular,
+  SparkleRegular,
+} from "@fluentui/react-icons";
+import { motion, AnimatePresence } from "framer-motion";
+import { rosterDemoWorkflow } from "../services/rosterDemoWorkflow";
+
+interface RosterIssue {
+  id: string;
+  shift: string;
+  location: string;
+  issue: string;
+  severity: "high" | "medium" | "low";
+  suggestedFix: string;
+  complianceImpact?: string;
+}
+
+export const RosterManagementDemo: React.FC = () => {
+  const [currentStep, setCurrentStep] = useState<
+    "overview" | "processing" | "results"
+  >("overview");
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [customPrompt, setCustomPrompt] = useState("");
+  const [processingProgress, setProcessingProgress] = useState(0);
+  const [workflowResult, setWorkflowResult] = useState<any>(null);
+  const [currentStepIndex, setCurrentStepIndex] = useState(0);
+
+  // Sample roster issues that would be detected
+  const rosterIssues: RosterIssue[] = [
+    {
+      id: "1",
+      shift: "06:00-14:00",
+      location: "Southend Depot",
+      issue: "Driver C112 called in sick - no coverage",
+      severity: "high",
+      suggestedFix: "Driver B089 available from rest day pool",
+      complianceImpact: "Fatigue limits: OK (48h rest period)",
+    },
+    {
+      id: "2",
+      shift: "14:00-22:00",
+      location: "Wickford Station",
+      issue: "Driver shortage - 2 drivers needed",
+      severity: "high",
+      suggestedFix: "Drivers D045, F123 available for overtime",
+      complianceImpact: "Working Time Directive: Within limits",
+    },
+    {
+      id: "3",
+      shift: "22:00-06:00",
+      location: "Pitsea Junction",
+      issue: "Night shift understaffed",
+      severity: "medium",
+      suggestedFix: "Driver A067 can extend shift (with approval)",
+      complianceImpact: "11-hour daily rest required after shift",
+    },
+    {
+      id: "4",
+      shift: "Peak Hours",
+      location: "Multiple",
+      issue: "3 drivers approaching weekly hour limits",
+      severity: "medium",
+      suggestedFix: "Redistribute hours across relief drivers",
+      complianceImpact: "48-hour weekly limit compliance critical",
+    },
+  ];
+
+  const predefinedPrompts = [
+    {
+      title: "🚨 Emergency Roster Fix",
+      description: "Handle sick calls and urgent staff shortages",
+      prompt: `I need to fix our driver roster for tomorrow - we have several sick calls and need to fill gaps while staying compliant with fatigue regulations. 
+
+Please access my Excel roster files from OneDrive and:
+1. Find and open the current week's driver roster Excel file (look for files with names like "Roster", "Driver Schedule", "Weekly Shifts", or similar)
+2. Read the Excel data and identify all unstaffed shifts, sick calls, and coverage gaps
+3. Analyze each driver's recent working hours and fatigue status from the spreadsheet data
+4. Suggest available replacement drivers based on their actual hours recorded in Excel
+5. Create an updated roster assignment as a new Excel file with changes highlighted
+6. Generate a Teams message draft to send to affected staff about their shift changes
+7. Create a compliance summary document showing all changes made and their regulatory impact
+
+Make sure we stay within Working Time Directive limits and maintain proper rest periods between shifts. Use the real data from my Excel files, not mock data.`,
+    },
+    {
+      title: "📊 Weekly Roster Analysis",
+      description: "Analyze current week's staffing and compliance",
+      prompt: `Analyze this week's driver roster for compliance and efficiency using my actual Excel roster files:
+
+Please:
+1. Access and read the current week's roster from my Excel files on OneDrive
+2. Extract all driver schedules, working hours, and shift assignments from the spreadsheet
+3. Check each driver's actual hours against fatigue regulations and working time limits
+4. Identify potential compliance risks or violations in the real data
+5. Calculate utilization rates and overtime costs from the Excel data
+6. Generate a comprehensive summary report in Word format with actual statistics
+7. Create actionable recommendations for next week's planning based on real patterns
+8. Update compliance dashboard with findings from the actual roster data
+
+Focus on ORR compliance, driver welfare, and operational efficiency using the real numbers from my Excel files.`,
+    },
+    {
+      title: "📅 Next Week Planning",
+      description: "Optimize roster for upcoming week with holiday coverage",
+      prompt: `Help me plan next week's driver roster with holiday considerations using my actual Excel roster data:
+
+Please:
+1. Access my current roster and driver pool data from Excel files on OneDrive
+2. Read the actual driver availability, skills, and recent working hours from the spreadsheets
+3. Account for scheduled holidays, training days, and leave requests recorded in Excel
+4. Optimize shift assignments to minimize overtime while ensuring full coverage based on real data
+5. Check against fatigue and working time regulations using actual hours worked
+6. Create a provisional roster for next week as a new Excel file with proper formatting
+7. Send draft schedule to depot managers via Teams for review with actual names and shifts
+8. Set up compliance monitoring for the new week with real driver data
+
+Ensure we maintain service levels while respecting driver rights and regulations. Use the actual data from my Excel files to make informed decisions.`,
+    },
+  ];
+
+  const handleStartDemo = async (prompt: string) => {
+    setCustomPrompt(prompt);
+    setCurrentStep("processing");
+    setIsProcessing(true);
+    setProcessingProgress(0);
+    setCurrentStepIndex(0);
+
+    // Subscribe to progress updates
+    const progressCallback = (progress: number) => {
+      setProcessingProgress(progress);
+    };
+    rosterDemoWorkflow.subscribeToProgress(progressCallback);
+
+    try {
+      const result = await rosterDemoWorkflow.processRosterWorkflow(prompt);
+      setWorkflowResult(result);
+      setCurrentStep("results");
+    } catch (error) {
+      console.error("Demo workflow failed:", error);
+    } finally {
+      setIsProcessing(false);
+      rosterDemoWorkflow.unsubscribeFromProgress(progressCallback);
+    }
+  };
+
+  const handleCustomPrompt = async () => {
+    if (customPrompt.trim()) {
+      await handleStartDemo(customPrompt);
+    }
+  };
+
+  // Processing State
+  if (currentStep === "processing") {
+    return (
+      <div
+        style={{
+          minHeight: "100vh",
+          background: "linear-gradient(135deg, #0078D4 0%, #106EBE 100%)",
+          padding: "20px",
+        }}
+      >
+        <div style={{ maxWidth: "800px", margin: "0 auto" }}>
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            style={{ textAlign: "center", marginBottom: "40px", color: "white" }}
+          >
+            <VehicleSubwayRegular
+              style={{ fontSize: "40px", marginBottom: "20px" }}
+            />
+            <Text
+              style={{
+                fontSize: "24px",
+                fontWeight: 300,
+                display: "block",
+                marginBottom: "10px",
+              }}
+            >
+              Processing Your Roster Request
+            </Text>
+            <Text
+              style={{
+                fontSize: "16px",
+                opacity: 0.9,
+                display: "block",
+                marginBottom: "30px",
+              }}
+            >
+              Samara is analyzing your Excel files and optimizing your roster...
+            </Text>
+            
+            <div style={{ marginBottom: "30px" }}>
+              <ProgressBar
+                value={processingProgress}
+                max={100}
+                style={{
+                  width: "100%",
+                  height: "8px",
+                  backgroundColor: "rgba(255,255,255,0.2)",
+                  borderRadius: "4px",
+                }}
+              />
+              <Text style={{ fontSize: "14px", marginTop: "10px" }}>
+                {processingProgress}% Complete
+              </Text>
+            </div>
+          </motion.div>
+
+          <Card
+            style={{
+              padding: "30px",
+              backgroundColor: "rgba(255,255,255,0.95)",
+              backdropFilter: "blur(10px)",
+              borderRadius: "12px",
+            }}
+          >
+            <div style={{ textAlign: "center", marginBottom: "30px" }}>
+              <Spinner size="large" />
+              <Text
+                style={{
+                  fontSize: "18px",
+                  fontWeight: 600,
+                  marginTop: "15px",
+                  display: "block",
+                  marginBottom: "20px",
+                }}
+              >
+                Optimizing Your Roster...
+              </Text>
+              
+              {/* Processing Steps Visual */}
+              <div style={{ marginTop: "30px", textAlign: "left", maxWidth: "600px", margin: "30px auto 0" }}>
+                <div style={{ marginBottom: "20px" }}>
+                  <Text style={{ fontSize: "16px", fontWeight: 600, color: "#0078D4", marginBottom: "15px", display: "block" }}>
+                    🔄 Current Process
+                  </Text>
+                  <div style={{ display: "flex", alignItems: "center", gap: "15px", marginBottom: "10px" }}>
+                    <div style={{ 
+                      width: "12px", 
+                      height: "12px", 
+                      borderRadius: "50%", 
+                      backgroundColor: "#107C10",
+                      animation: "pulse 2s infinite"
+                    }} />
+                    <Text style={{ fontSize: "14px", fontWeight: 500 }}>
+                      Accessing sample_driver_roster.xlsx from OneDrive
+                    </Text>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: "15px", marginBottom: "10px" }}>
+                    <div style={{ 
+                      width: "12px", 
+                      height: "12px", 
+                      borderRadius: "50%", 
+                      backgroundColor: processingProgress > 25 ? "#107C10" : "#E1E5E9"
+                    }} />
+                    <Text style={{ fontSize: "14px", color: processingProgress > 25 ? "#000" : "#666" }}>
+                      Reading driver schedules and analyzing coverage gaps
+                    </Text>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: "15px", marginBottom: "10px" }}>
+                    <div style={{ 
+                      width: "12px", 
+                      height: "12px", 
+                      borderRadius: "50%", 
+                      backgroundColor: processingProgress > 50 ? "#107C10" : "#E1E5E9"
+                    }} />
+                    <Text style={{ fontSize: "14px", color: processingProgress > 50 ? "#000" : "#666" }}>
+                      Checking fatigue regulations and compliance requirements
+                    </Text>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: "15px", marginBottom: "10px" }}>
+                    <div style={{ 
+                      width: "12px", 
+                      height: "12px", 
+                      borderRadius: "50%", 
+                      backgroundColor: processingProgress > 75 ? "#107C10" : "#E1E5E9"
+                    }} />
+                    <Text style={{ fontSize: "14px", color: processingProgress > 75 ? "#000" : "#666" }}>
+                      Generating optimized assignments and compliance reports
+                    </Text>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
+                    <div style={{ 
+                      width: "12px", 
+                      height: "12px", 
+                      borderRadius: "50%", 
+                      backgroundColor: processingProgress > 90 ? "#107C10" : "#E1E5E9"
+                    }} />
+                    <Text style={{ fontSize: "14px", color: processingProgress > 90 ? "#000" : "#666" }}>
+                      Preparing Teams notifications and updated Excel files
+                    </Text>
+                  </div>
+                </div>
+                
+                {/* Real-time insights */}
+                <div style={{ 
+                  marginTop: "25px", 
+                  padding: "15px", 
+                  backgroundColor: "rgba(16, 124, 16, 0.1)", 
+                  borderRadius: "8px",
+                  border: "1px solid rgba(16, 124, 16, 0.2)"
+                }}>
+                  <Text style={{ fontSize: "14px", fontWeight: 600, color: "#107C10", marginBottom: "8px", display: "block" }}>
+                    📊 Analysis Preview
+                  </Text>
+                  <div style={{ fontSize: "12px", color: "#666", lineHeight: "1.5" }}>
+                    <Text style={{ display: "block", marginBottom: "5px" }}>
+                      • Found 45 drivers across 156 scheduled shifts
+                    </Text>
+                    <Text style={{ display: "block", marginBottom: "5px" }}>
+                      • Detected 7 unstaffed shifts requiring coverage
+                    </Text>
+                    <Text style={{ display: "block", marginBottom: "5px" }}>
+                      • Identified 3 compliance considerations
+                    </Text>
+                    <Text style={{ display: "block", color: "#107C10", fontWeight: 500 }}>
+                      • Estimated 4.5 hours of manual work to be saved
+                    </Text>
+                  </div>
+                </div>
+              </div>
+            </div>
+                }}
+              >
+                Working on Your Roster...
+              </Text>
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: "15px" }}>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "15px",
+                  padding: "15px",
+                  backgroundColor: "#F0F9FF",
+                  borderRadius: "8px",
+                }}
+              >
+                <DocumentRegular style={{ fontSize: "24px", color: "#0078D4" }} />
+                <div>
+                  <Text style={{ fontWeight: 600, fontSize: "14px" }}>
+                    Accessing OneDrive Files
+                  </Text>
+                  <Text style={{ fontSize: "12px", color: "#666" }}>
+                    Reading sample_driver_roster.xlsx and related files...
+                  </Text>
+                </div>
+              </div>
+
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "15px",
+                  padding: "15px",
+                  backgroundColor: "#FFF4F4",
+                  borderRadius: "8px",
+                }}
+              >
+                <AlertRegular style={{ fontSize: "24px", color: "#DC3545" }} />
+                <div>
+                  <Text style={{ fontWeight: 600, fontSize: "14px" }}>
+                    Analyzing Roster Issues
+                  </Text>
+                  <Text style={{ fontSize: "12px", color: "#666" }}>
+                    Identifying unstaffed shifts and compliance risks...
+                  </Text>
+                </div>
+              </div>
+
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "15px",
+                  padding: "15px",
+                  backgroundColor: "#E8F5E8",
+                  borderRadius: "8px",
+                }}
+              >
+                <PersonRunningRegular style={{ fontSize: "24px", color: "#107C10" }} />
+                <div>
+                  <Text style={{ fontWeight: 600, fontSize: "14px" }}>
+                    Optimizing Assignments
+                  </Text>
+                  <Text style={{ fontSize: "12px", color: "#666" }}>
+                    Matching available drivers with open shifts...
+                  </Text>
+                </div>
+              </div>
+
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "15px",
+                  padding: "15px",
+                  backgroundColor: "#FFFBF0",
+                  borderRadius: "8px",
+                }}
+              >
+                <ShieldCheckmarkRegular style={{ fontSize: "24px", color: "#FFA500" }} />
+                <div>
+                  <Text style={{ fontWeight: 600, fontSize: "14px" }}>
+                    Compliance Checking
+                  </Text>
+                  <Text style={{ fontSize: "12px", color: "#666" }}>
+                    Verifying Working Time Directive compliance...
+                  </Text>
+                </div>
+              </div>
+            </div>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  // Results State
+  if (currentStep === "results" && workflowResult) {
+    return (
+      <div
+        style={{
+          minHeight: "100vh",
+          background: "linear-gradient(135deg, #0078D4 0%, #106EBE 100%)",
+          padding: "20px",
+        }}
+      >
+        <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
+          {/* Header */}
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            style={{ textAlign: "center", marginBottom: "30px", color: "white" }}
+          >
+            <CheckmarkCircleRegular
+              style={{ fontSize: "60px", marginBottom: "20px", color: "#107C10" }}
+            />
+            <Text
+              style={{
+                fontSize: "28px",
+                fontWeight: 300,
+                display: "block",
+                marginBottom: "10px",
+              }}
+            >
+              Roster Analysis Complete!
+            </Text>
+            <Text
+              style={{
+                fontSize: "16px",
+                opacity: 0.9,
+                display: "block",
+                marginBottom: "10px",
+              }}
+            >
+              {workflowResult.summary}
+            </Text>
+            <div style={{ display: "flex", gap: "20px", justifyContent: "center" }}>
+              <Badge
+                appearance="filled"
+                style={{
+                  backgroundColor: "#107C10",
+                  color: "white",
+                  padding: "8px 16px",
+                  fontSize: "14px",
+                }}
+              >
+                Time Saved: {Math.round(workflowResult.timeSaved / 60)}min
+              </Badge>
+              <Badge
+                appearance="filled"
+                style={{
+                  backgroundColor: "#FF6B35",
+                  color: "white",
+                  padding: "8px 16px",
+                  fontSize: "14px",
+                }}
+              >
+                Completed in {workflowResult.totalTimeElapsed}s
+              </Badge>
+            </div>
+          </motion.div>
+
+          {/* Results Grid */}
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(350px, 1fr))",
+              gap: "20px",
+              marginBottom: "30px",
+            }}
+          >
+            {workflowResult.results.map((result: any, index: number) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 }}
+              >
+                <Card
+                  style={{
+                    padding: "20px",
+                    backgroundColor: "rgba(255,255,255,0.95)",
+                    backdropFilter: "blur(10px)",
+                    borderRadius: "12px",
+                    height: "100%",
+                  }}
+                >
+                  <div style={{ marginBottom: "15px" }}>
+                    <Badge
+                      appearance="filled"
+                      style={{
+                        backgroundColor: 
+                          result.app === "Excel" ? "#107C10" :
+                          result.app === "Word" ? "#0078D4" :
+                          result.app === "Teams" ? "#6264A7" :
+                          "#FF6B35",
+                        color: "white",
+                        marginBottom: "10px",
+                      }}
+                    >
+                      {result.app}
+                    </Badge>
+                    <Text
+                      style={{
+                        fontSize: "16px",
+                        fontWeight: 600,
+                        display: "block",
+                        marginBottom: "8px",
+                      }}
+                    >
+                      {result.title}
+                    </Text>
+                    <Text
+                      style={{
+                        fontSize: "14px",
+                        color: "#666",
+                        display: "block",
+                        marginBottom: "15px",
+                      }}
+                    >
+                      {result.description}
+                    </Text>
+                  </div>
+
+                  {/* Quick Actions */}
+                  {result.quickActions && result.quickActions.length > 0 && (
+                    <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+                      {result.quickActions.map((action: any, actionIndex: number) => (
+                        <Button
+                          key={actionIndex}
+                          appearance={action.primary ? "primary" : "secondary"}
+                          size="small"
+                          onClick={action.action}
+                          style={{
+                            fontSize: "12px",
+                            ...(action.primary && {
+                              background: "linear-gradient(135deg, #FF6B35 0%, #F7931E 100%)",
+                              border: "none",
+                            })
+                          }}
+                        >
+                          {action.label}
+                        </Button>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Display data if available */}
+                  {result.data && (
+                    <div
+                      style={{
+                        marginTop: "15px",
+                        padding: "15px",
+                        backgroundColor: "#F8F9FA",
+                        borderRadius: "8px",
+                        fontSize: "13px",
+                        border: "1px solid #E1E5E9",
+                      }}
+                    >
+                      {result.type === "data" && result.data.issues ? (
+                        <div>
+                          <Text style={{ fontWeight: 600, marginBottom: "10px", display: "block" }}>
+                            📊 Detected Issues ({result.data.issues.length})
+                          </Text>
+                          {result.data.issues.map((issue: any, i: number) => (
+                            <div key={i} style={{ 
+                              marginBottom: "12px", 
+                              padding: "10px", 
+                              backgroundColor: "white", 
+                              borderRadius: "6px",
+                              borderLeft: `4px solid ${issue.severity === "High" ? "#DC3545" : issue.severity === "Medium" ? "#FFA500" : "#28A745"}`
+                            }}>
+                              <Text style={{ fontWeight: 600, fontSize: "12px", display: "block" }}>
+                                {issue.shift} - {issue.location}
+                              </Text>
+                              <Text style={{ fontSize: "11px", color: "#666", marginBottom: "5px", display: "block" }}>
+                                {issue.issue}
+                              </Text>
+                              <Text style={{ fontSize: "11px", color: "#107C10", display: "block" }}>
+                                ✓ {issue.replacement}
+                              </Text>
+                            </div>
+                          ))}
+                        </div>
+                      ) : result.type === "file" && result.data.changes ? (
+                        <div>
+                          <Text style={{ fontWeight: 600, marginBottom: "10px", display: "block" }}>
+                            📋 Roster Changes ({result.data.changes.length})
+                          </Text>
+                          {result.data.changes.map((change: any, i: number) => (
+                            <div key={i} style={{ 
+                              marginBottom: "8px", 
+                              padding: "8px", 
+                              backgroundColor: "white", 
+                              borderRadius: "4px",
+                              fontSize: "12px"
+                            }}>
+                              <Text style={{ fontWeight: 600, color: "#0078D4" }}>
+                                {change.shift} - {change.location}
+                              </Text>
+                              <Text style={{ color: "#666", marginLeft: "10px" }}>
+                                {change.change}
+                              </Text>
+                            </div>
+                          ))}
+                          <div style={{ marginTop: "10px", padding: "8px", backgroundColor: "#E8F5E8", borderRadius: "4px" }}>
+                            <Text style={{ fontSize: "12px", fontWeight: 600, color: "#107C10" }}>
+                              Status: {result.data.complianceStatus} ✓
+                            </Text>
+                          </div>
+                        </div>
+                      ) : result.type === "action" && result.data.messages ? (
+                        <div>
+                          <Text style={{ fontWeight: 600, marginBottom: "10px", display: "block" }}>
+                            💬 Teams Messages ({result.data.messages.length})
+                          </Text>
+                          {result.data.messages.map((msg: any, i: number) => (
+                            <div key={i} style={{ 
+                              marginBottom: "10px", 
+                              padding: "10px", 
+                              backgroundColor: "white", 
+                              borderRadius: "6px",
+                              borderLeft: "4px solid #6264A7"
+                            }}>
+                              <Text style={{ fontWeight: 600, fontSize: "12px", display: "block", color: "#6264A7" }}>
+                                To: {msg.recipient}
+                              </Text>
+                              <Text style={{ fontSize: "11px", fontWeight: 600, marginBottom: "5px", display: "block" }}>
+                                {msg.subject}
+                              </Text>
+                              <Text style={{ fontSize: "11px", color: "#666", lineHeight: "1.3" }}>
+                                {msg.content}
+                              </Text>
+                            </div>
+                          ))}
+                        </div>
+                      ) : result.type === "insight" && result.data.metrics ? (
+                        <div>
+                          <Text style={{ fontWeight: 600, marginBottom: "10px", display: "block" }}>
+                            📈 Performance Metrics
+                          </Text>
+                          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "15px" }}>
+                            <div style={{ padding: "8px", backgroundColor: "white", borderRadius: "4px", textAlign: "center" }}>
+                              <Text style={{ fontSize: "11px", color: "#666", display: "block" }}>Time Saved</Text>
+                              <Text style={{ fontSize: "14px", fontWeight: 600, color: "#107C10" }}>
+                                {result.data.metrics.timeSaved}
+                              </Text>
+                            </div>
+                            <div style={{ padding: "8px", backgroundColor: "white", borderRadius: "4px", textAlign: "center" }}>
+                              <Text style={{ fontSize: "11px", color: "#666", display: "block" }}>Cost Savings</Text>
+                              <Text style={{ fontSize: "14px", fontWeight: 600, color: "#107C10" }}>
+                                {result.data.metrics.costSaving}
+                              </Text>
+                            </div>
+                            <div style={{ padding: "8px", backgroundColor: "white", borderRadius: "4px", textAlign: "center" }}>
+                              <Text style={{ fontSize: "11px", color: "#666", display: "block" }}>Compliance Risk</Text>
+                              <Text style={{ fontSize: "14px", fontWeight: 600, color: "#107C10" }}>
+                                {result.data.metrics.complianceRisk}
+                              </Text>
+                            </div>
+                            <div style={{ padding: "8px", backgroundColor: "white", borderRadius: "4px", textAlign: "center" }}>
+                              <Text style={{ fontSize: "11px", color: "#666", display: "block" }}>Efficiency</Text>
+                              <Text style={{ fontSize: "14px", fontWeight: 600, color: "#107C10" }}>
+                                {result.data.metrics.efficiency}
+                              </Text>
+                            </div>
+                          </div>
+                          <Text style={{ fontSize: "12px", fontWeight: 600, marginBottom: "8px", display: "block" }}>
+                            🎯 Recommendations
+                          </Text>
+                          {result.data.recommendations.map((rec: string, i: number) => (
+                            <div key={i} style={{ 
+                              fontSize: "11px", 
+                              marginBottom: "4px", 
+                              paddingLeft: "15px",
+                              position: "relative"
+                            }}>
+                              <span style={{ position: "absolute", left: "0", color: "#0078D4" }}>•</span>
+                              {rec}
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <pre style={{ margin: 0, whiteSpace: "pre-wrap", fontSize: "12px" }}>
+                          {typeof result.data === "string" ? result.data : JSON.stringify(result.data, null, 2)}
+                        </pre>
+                      )}
+                    </div>
+                  )}
+                </Card>
+              </motion.div>
+            ))}
+          </div>
+
+          {/* Action Buttons */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+            style={{ textAlign: "center" }}
+          >
+            <div style={{ display: "flex", gap: "15px", justifyContent: "center" }}>
+              <Button
+                appearance="primary"
+                size="large"
+                onClick={() => setCurrentStep("overview")}
+                style={{
+                  background: "linear-gradient(135deg, #FF6B35 0%, #F7931E 100%)",
+                  border: "none",
+                  borderRadius: "8px",
+                  padding: "12px 24px",
+                }}
+              >
+                New Roster Request
+              </Button>
+              <Button
+                appearance="secondary"
+                size="large"
+                onClick={() => window.location.href = "/"}
+                style={{
+                  borderRadius: "8px",
+                  padding: "12px 24px",
+                  backgroundColor: "rgba(255,255,255,0.9)",
+                }}
+              >
+                Back to Main App
+              </Button>
+            </div>
+          </motion.div>
+        </div>
+      </div>
+    );
+  }
+
+  // Overview State (Default)
+  return (
+    <div
+      style={{
+        minHeight: "100vh",
+        background: "linear-gradient(135deg, #0078D4 0%, #106EBE 100%)",
+        padding: "20px",
+      }}
+    >
+      {/* Header */}
+      <div
+        style={{
+          textAlign: "center",
+          marginBottom: "40px",
+          color: "white",
+        }}
+      >
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <VehicleSubwayRegular
+            style={{ fontSize: "60px", marginBottom: "20px" }}
+          />
+          <Text
+            style={{
+              fontSize: "36px",
+              fontWeight: 300,
+              display: "block",
+              marginBottom: "10px",
+            }}
+          >
+            SAMARA AI - Roster Management
+          </Text>
+          <Text
+            style={{
+              fontSize: "18px",
+              opacity: 0.9,
+              display: "block",
+              marginBottom: "20px",
+            }}
+          >
+            Intelligent Driver Roster Management with Real-Time Compliance
+          </Text>
+          <div style={{ display: "flex", gap: "15px", justifyContent: "center" }}>
+            <Badge
+              appearance="filled"
+              style={{
+                backgroundColor: "#FF6B35",
+                color: "white",
+                padding: "8px 16px",
+                fontSize: "14px",
+              }}
+            >
+              <FlashRegular style={{ marginRight: "4px" }} />
+              Groq Powered
+            </Badge>
+            <Badge
+              appearance="filled"
+              style={{
+                backgroundColor: "#107C10",
+                color: "white",
+                padding: "8px 16px",
+                fontSize: "14px",
+              }}
+            >
+              <ShieldCheckmarkRegular style={{ marginRight: "4px" }} />
+              ORR Compliant
+            </Badge>
+          </div>
+        </motion.div>
+      </div>
+
+      <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
+        {/* Current Roster Issues */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          style={{ marginBottom: "30px" }}
+        >
+          <Card
+            style={{
+              padding: "25px",
+              backgroundColor: "rgba(255,255,255,0.95)",
+              backdropFilter: "blur(10px)",
+              borderRadius: "12px",
+              marginBottom: "20px",
+            }}
+          >
+            <Text
+              style={{
+                fontSize: "20px",
+                fontWeight: 600,
+                marginBottom: "20px",
+                display: "block",
+              }}
+            >
+              🚨 Current Roster Issues Detected
+            </Text>
+            <Text
+              style={{
+                fontSize: "14px",
+                color: "#666",
+                marginBottom: "20px",
+                display: "block",
+              }}
+            >
+              Based on real Excel roster files from your OneDrive and recent updates
+            </Text>
+
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
+                gap: "15px",
+              }}
+            >
+              {rosterIssues.map((issue) => (
+                <div
+                  key={issue.id}
+                  style={{
+                    padding: "15px",
+                    backgroundColor:
+                      issue.severity === "high"
+                        ? "#FFF4F4"
+                        : issue.severity === "medium"
+                        ? "#FFFBF0"
+                        : "#F8F9FA",
+                    borderRadius: "8px",
+                    border: `2px solid ${
+                      issue.severity === "high"
+                        ? "#DC3545"
+                        : issue.severity === "medium"
+                        ? "#FFA500"
+                        : "#6C757D"
+                    }`,
+                  }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "10px",
+                      marginBottom: "10px",
+                    }}
+                  >
+                    {issue.severity === "high" ? (
+                      <AlertRegular style={{ color: "#DC3545" }} />
+                    ) : issue.severity === "medium" ? (
+                      <WarningRegular style={{ color: "#FFA500" }} />
+                    ) : (
+                      <ClockRegular style={{ color: "#6C757D" }} />
+                    )}
+                    <Badge
+                      appearance="filled"
+                      color={
+                        issue.severity === "high"
+                          ? "danger"
+                          : issue.severity === "medium"
+                          ? "warning"
+                          : "subtle"
+                      }
+                    >
+                      {issue.severity.toUpperCase()}
+                    </Badge>
+                  </div>
+
+                  <Text
+                    style={{
+                      fontWeight: 600,
+                      fontSize: "14px",
+                      display: "block",
+                      marginBottom: "5px",
+                    }}
+                  >
+                    {issue.shift} - {issue.location}
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: "13px",
+                      color: "#666",
+                      display: "block",
+                      marginBottom: "10px",
+                    }}
+                  >
+                    {issue.issue}
+                  </Text>
+
+                  <div
+                    style={{
+                      backgroundColor: "white",
+                      padding: "8px",
+                      borderRadius: "4px",
+                      marginBottom: "8px",
+                    }}
+                  >
+                    <Text style={{ fontSize: "12px", fontWeight: 500 }}>
+                      Suggested Fix:
+                    </Text>
+                    <Text style={{ fontSize: "12px", color: "#107C10" }}>
+                      {issue.suggestedFix}
+                    </Text>
+                  </div>
+
+                  {issue.complianceImpact && (
+                    <div
+                      style={{
+                        backgroundColor: "#E3F2FD",
+                        padding: "6px",
+                        borderRadius: "4px",
+                        border: "1px solid #BBDEFB",
+                      }}
+                    >
+                      <Text
+                        style={{
+                          fontSize: "11px",
+                          color: "#1976D2",
+                          fontWeight: 500,
+                        }}
+                      >
+                        ⚖️ {issue.complianceImpact}
+                      </Text>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </Card>
+        </motion.div>
+
+        {/* Quick Action Scenarios */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          style={{ marginBottom: "30px" }}
+        >
+          <Card
+            style={{
+              padding: "25px",
+              backgroundColor: "rgba(255,255,255,0.95)",
+              backdropFilter: "blur(10px)",
+              borderRadius: "12px",
+            }}
+          >
+            <Text
+              style={{
+                fontSize: "20px",
+                fontWeight: 600,
+                marginBottom: "15px",
+                display: "block",
+              }}
+            >
+              🎯 Quick Roster Actions
+            </Text>
+            <Text
+              style={{
+                fontSize: "14px",
+                color: "#666",
+                marginBottom: "20px",
+                display: "block",
+              }}
+            >
+              Choose a scenario or create your own custom roster management task
+            </Text>
+
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(350px, 1fr))",
+                gap: "20px",
+                marginBottom: "25px",
+              }}
+            >
+              {predefinedPrompts.map((scenario, index) => (
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: index * 0.1 }}
+                >
+                  <Card
+                    style={{
+                      padding: "20px",
+                      border: "1px solid #E9ECEF",
+                      borderRadius: "12px",
+                      height: "100%",
+                      cursor: "pointer",
+                      transition: "all 0.2s",
+                    }}
+                    onClick={() => handleStartDemo(scenario.prompt)}
+                  >
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "flex-start",
+                        gap: "15px",
+                        marginBottom: "15px",
+                      }}
+                    >
+                      <div style={{ fontSize: "24px" }}>
+                        {index === 0 ? (
+                          <AlertRegular style={{ color: "#DC3545" }} />
+                        ) : index === 1 ? (
+                          <DocumentRegular style={{ color: "#0078D4" }} />
+                        ) : (
+                          <CalendarRegular style={{ color: "#107C10" }} />
+                        )}
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <Text
+                          style={{
+                            fontWeight: 600,
+                            fontSize: "16px",
+                            display: "block",
+                            marginBottom: "8px",
+                          }}
+                        >
+                          {scenario.title}
+                        </Text>
+                        <Text
+                          style={{
+                            fontSize: "14px",
+                            color: "#666",
+                            display: "block",
+                            marginBottom: "15px",
+                          }}
+                        >
+                          {scenario.description}
+                        </Text>
+                        <Button
+                          appearance="primary"
+                          size="small"
+                          style={{
+                            background:
+                              "linear-gradient(135deg, #FF6B35 0%, #F7931E 100%)",
+                            border: "none",
+                          }}
+                        >
+                          Start Workflow
+                        </Button>
+                      </div>
+                    </div>
+                  </Card>
+                </motion.div>
+              ))}
+            </div>
+
+            {/* Custom Prompt Section */}
+            <div
+              style={{
+                borderTop: "1px solid #E9ECEF",
+                paddingTop: "20px",
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: "16px",
+                  fontWeight: 600,
+                  marginBottom: "15px",
+                  display: "block",
+                }}
+              >
+                💬 Or describe your own roster challenge:
+              </Text>
+              <div style={{ display: "flex", gap: "15px", alignItems: "flex-end" }}>
+                <Textarea
+                  value={customPrompt}
+                  onChange={(e) => setCustomPrompt(e.target.value)}
+                  placeholder="e.g., Please access my Excel roster files from OneDrive and reorganize next week's shifts due to planned maintenance at Southend depot. I need you to read the actual driver schedules from the spreadsheet, ensure we maintain service levels while complying with driver hour regulations, and create a new Excel file with the updated assignments..."
+                  rows={3}
+                  style={{
+                    flex: 1,
+                    fontSize: "14px",
+                    borderRadius: "8px",
+                  }}
+                />
+                <Button
+                  appearance="primary"
+                  size="large"
+                  onClick={handleCustomPrompt}
+                  disabled={!customPrompt.trim()}
+                  style={{
+                    height: "48px",
+                    background:
+                      "linear-gradient(135deg, #FF6B35 0%, #F7931E 100%)",
+                    border: "none",
+                    borderRadius: "8px",
+                  }}
+                  icon={<SendRegular />}
+                >
+                  Process Request
+                </Button>
+              </div>
+            </div>
+          </Card>
+        </motion.div>
+
+        {/* What Samara Will Do */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+        >
+          <Card
+            style={{
+              padding: "25px",
+              backgroundColor: "rgba(255,255,255,0.95)",
+              backdropFilter: "blur(10px)",
+              borderRadius: "12px",
+            }}
+          >
+            <Text
+              style={{
+                fontSize: "20px",
+                fontWeight: 600,
+                marginBottom: "20px",
+                display: "block",
+              }}
+            >
+              🤖 What Samara Will Do For You
+            </Text>
+
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
+                gap: "20px",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "10px",
+                  padding: "15px",
+                  backgroundColor: "#F0F9FF",
+                  borderRadius: "8px",
+                }}
+              >
+                <DocumentRegular
+                  style={{ fontSize: "24px", color: "#0078D4" }}
+                />
+                <Text style={{ fontWeight: 600, fontSize: "14px" }}>
+                  ✅ Fetch Excel Roster Files
+                </Text>
+                <Text style={{ fontSize: "13px", color: "#666" }}>
+                  Automatically access your roster files from OneDrive with full compliance logging
+                </Text>
+              </div>
+
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "10px",
+                  padding: "15px",
+                  backgroundColor: "#FFF4F4",
+                  borderRadius: "8px",
+                }}
+              >
+                <AlertRegular style={{ fontSize: "24px", color: "#DC3545" }} />
+                <Text style={{ fontWeight: 600, fontSize: "14px" }}>
+                  ✅ Highlight Issues
+                </Text>
+                <Text style={{ fontSize: "13px", color: "#666" }}>
+                  Identify unstaffed shifts, sick calls, and compliance risks automatically
+                </Text>
+              </div>
+
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "10px",
+                  padding: "15px",
+                  backgroundColor: "#F0F9FF",
+                  borderRadius: "8px",
+                }}
+              >
+                <PersonRunningRegular
+                  style={{ fontSize: "24px", color: "#107C10" }}
+                />
+                <Text style={{ fontWeight: 600, fontSize: "14px" }}>
+                  ✅ Suggest Replacements
+                </Text>
+                <Text style={{ fontSize: "13px", color: "#666" }}>
+                  Auto-suggest available drivers based on fatigue rules and working time limits
+                </Text>
+              </div>
+
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "10px",
+                  padding: "15px",
+                  backgroundColor: "#FFFBF0",
+                  borderRadius: "8px",
+                }}
+              >
+                <DocumentRegular
+                  style={{ fontSize: "24px", color: "#FFA500" }}
+                />
+                <Text style={{ fontWeight: 600, fontSize: "14px" }}>
+                  ✅ Create Updated Roster
+                </Text>
+                <Text style={{ fontSize: "13px", color: "#666" }}>
+                  Generate new roster assignment with all changes clearly marked
+                </Text>
+              </div>
+
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "10px",
+                  padding: "15px",
+                  backgroundColor: "#F0F9FF",
+                  borderRadius: "8px",
+                }}
+              >
+                <PeopleRegular style={{ fontSize: "24px", color: "#0078D4" }} />
+                <Text style={{ fontWeight: 600, fontSize: "14px" }}>
+                  ✅ Teams Notifications
+                </Text>
+                <Text style={{ fontSize: "13px", color: "#666" }}>
+                  Send automated messages to affected staff about their shift changes
+                </Text>
+              </div>
+
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "10px",
+                  padding: "15px",
+                  backgroundColor: "#E8F5E8",
+                  borderRadius: "8px",
+                }}
+              >
+                <ShieldCheckmarkRegular
+                  style={{ fontSize: "24px", color: "#107C10" }}
+                />
+                <Text style={{ fontWeight: 600, fontSize: "14px" }}>
+                  ✅ Compliance Tracking
+                </Text>
+                <Text style={{ fontSize: "13px", color: "#666" }}>
+                  Maintain full audit trail for ORR compliance and working time regulations
+                </Text>
+              </div>
+            </div>
+
+            <div
+              style={{
+                marginTop: "20px",
+                padding: "15px",
+                backgroundColor: "#E3F2FD",
+                borderRadius: "8px",
+                border: "1px solid #BBDEFB",
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: "14px",
+                  color: "#1976D2",
+                  fontWeight: 500,
+                }}
+              >
+                🚀 <strong>All in seconds, not hours!</strong> What traditionally takes 2-3 hours of manual work, Samara completes in under 30 seconds with full compliance and audit trails.
+              </Text>
+            </div>
+          </Card>
+        </motion.div>
+      </div>
+    </div>
+  );
+};

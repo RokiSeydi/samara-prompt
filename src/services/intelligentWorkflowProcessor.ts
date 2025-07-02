@@ -376,7 +376,6 @@ export class IntelligentWorkflowProcessor {
             context.prompt.toLowerCase().includes("financial") ||
             context.prompt.toLowerCase().includes("data")
           ) {
-<<<<<<< HEAD
             title = `Excel Data Summary Report - ${this.formatDateForFileName()}`;
           } else if (context.prompt.toLowerCase().includes("summary")) {
             title = `AI Summary Report - ${this.formatDateForFileName()}`;
@@ -384,15 +383,6 @@ export class IntelligentWorkflowProcessor {
             title = `AI Analysis Report - ${this.formatDateForFileName()}`;
           } else {
             title = `AI Generated Report - ${this.formatDateForFileName()}`;
-=======
-            title = `Excel Data Summary Report - ${new Date().toLocaleDateString()}`;
-          } else if (context.prompt.toLowerCase().includes("summary")) {
-            title = `AI Summary Report - ${new Date().toLocaleDateString()}`;
-          } else if (context.prompt.toLowerCase().includes("analysis")) {
-            title = `AI Analysis Report - ${new Date().toLocaleDateString()}`;
-          } else {
-            title = `AI Generated Report - ${new Date().toLocaleDateString()}`;
->>>>>>> d7fea82 (🚀 Major Enhancement: Real Excel Data Processing, Folder Search & Statistical Analysis)
           }
         }
 
@@ -444,12 +434,17 @@ export class IntelligentWorkflowProcessor {
         }
 
         const sanitizedTitle = this.sanitizeFileName(title);
-        const fileId = await graphService.createWordDocument(sanitizedTitle, content);
+        const fileId = await graphService.createWordDocument(
+          sanitizedTitle,
+          content
+        );
 
         // Log output creation
         await complianceLogger.logOutputCreation(
           complianceLogId,
-          sanitizedTitle.endsWith(".docx") ? sanitizedTitle.replace(".docx", ".txt") : `${sanitizedTitle}.txt`,
+          sanitizedTitle.endsWith(".docx")
+            ? sanitizedTitle.replace(".docx", ".txt")
+            : `${sanitizedTitle}.txt`,
           "text",
           "OneDrive",
           content.length,
@@ -457,21 +452,14 @@ export class IntelligentWorkflowProcessor {
         );
 
         // Return a more helpful message with a link to open the document
-<<<<<<< HEAD
-        const fileName = sanitizedTitle.endsWith(".docx") ? sanitizedTitle.replace(".docx", ".txt") : `${sanitizedTitle}.txt`;
+        const fileName = sanitizedTitle.endsWith(".docx")
+          ? sanitizedTitle.replace(".docx", ".txt")
+          : `${sanitizedTitle}.txt`;
         return `📝 Created document: "${fileName}" with ${
           content.includes("Financial Data")
             ? "integrated Excel financial data"
             : "comprehensive content"
         }. The document is saved to your OneDrive as a text file that can be opened in any text editor or imported into Word.`;
-=======
-        const fileName = title.endsWith(".docx") ? title : `${title}.docx`;
-        return `📝 Created Word document: "${fileName}" with ${
-          content.includes("Financial Data")
-            ? "integrated Excel financial data"
-            : "comprehensive content"
-        }. The document is saved to your OneDrive and can be opened in Word Online or desktop Word.`;
->>>>>>> d7fea82 (🚀 Major Enhancement: Real Excel Data Processing, Folder Search & Statistical Analysis)
       }
 
       case "format": {
@@ -521,7 +509,10 @@ export class IntelligentWorkflowProcessor {
         }
 
         const sanitizedMergedName = this.sanitizeFileName(mergedName);
-        await graphService.createWordDocument(sanitizedMergedName, mergedContent);
+        await graphService.createWordDocument(
+          sanitizedMergedName,
+          mergedContent
+        );
 
         // Log merged output creation
         await complianceLogger.logOutputCreation(
@@ -555,8 +546,40 @@ export class IntelligentWorkflowProcessor {
         console.log("📊 DEBUG: Starting Excel files list action");
 
         try {
-          const excelFiles = await graphService.getExcelFiles();
-          console.log("📊 DEBUG: Got Excel files:", excelFiles.length);
+          // Check if this is a roster-related request
+          const prompt = context.prompt.toLowerCase();
+          const rosterKeywords = [
+            "roster",
+            "driver",
+            "schedule",
+            "shift",
+            "rota",
+            "staff",
+            "crew",
+            "allocation",
+            "assignment",
+            "weekly",
+            "coverage",
+          ];
+          const isRosterRequest = rosterKeywords.some((keyword) =>
+            prompt.includes(keyword)
+          );
+
+          let excelFiles;
+          if (isRosterRequest) {
+            console.log(
+              "🔍 DEBUG: Detected roster-related request, searching for roster files"
+            );
+            excelFiles = await graphService.findRosterExcelFiles();
+            console.log(
+              "📊 DEBUG: Got roster-specific Excel files:",
+              excelFiles.length
+            );
+          } else {
+            console.log("📊 DEBUG: General Excel file request");
+            excelFiles = await graphService.getExcelFiles();
+            console.log("📊 DEBUG: Got all Excel files:", excelFiles.length);
+          }
 
           // Log file access for each file
           for (const file of excelFiles.slice(0, 20)) {
@@ -576,7 +599,11 @@ export class IntelligentWorkflowProcessor {
           const recentFiles = excelFiles.slice(0, count);
 
           if (recentFiles.length === 0) {
-            return "📊 No Excel files found in your OneDrive. Try uploading some Excel files to see them here!";
+            if (isRosterRequest) {
+              return "📊 No roster-related Excel files found in your OneDrive. Make sure you have files with names containing 'roster', 'driver', 'schedule', 'shift', or similar roster keywords.";
+            } else {
+              return "📊 No Excel files found in your OneDrive. Try uploading some Excel files to see them here!";
+            }
           }
 
           const fileList = recentFiles
@@ -591,7 +618,11 @@ export class IntelligentWorkflowProcessor {
             })
             .join("\n");
 
-          return `📊 Found ${recentFiles.length} Excel files:\n\n${fileList}`;
+          const resultMessage = isRosterRequest
+            ? `📊 Found ${recentFiles.length} roster-related Excel files:\n\n${fileList}`
+            : `📊 Found ${recentFiles.length} Excel files:\n\n${fileList}`;
+
+          return resultMessage;
         } catch (error) {
           console.error("📊 ERROR: Failed to get Excel files:", error);
 
@@ -626,11 +657,7 @@ export class IntelligentWorkflowProcessor {
 
         // Generate unique dummy data based on file name/number for better merge testing
         const fileNumber = this.extractFileNumberFromName(excelName);
-<<<<<<< HEAD
         const dummyData = graphService.generateDummyFinancialData(fileNumber);
-=======
-        const dummyData = graphService.generateDummyFinancialData();
->>>>>>> d7fea82 (🚀 Major Enhancement: Real Excel Data Processing, Folder Search & Statistical Analysis)
 
         const fileId = await graphService.createExcelWorkbook(excelName, [
           { sheetName: "Financial Data", data: dummyData },
@@ -655,11 +682,13 @@ export class IntelligentWorkflowProcessor {
         console.log("📊 DEBUG: Starting Excel merge action");
 
         try {
-<<<<<<< HEAD
           console.log("📊 DEBUG: Attempting to get Excel files...");
           const mergeFiles = await graphService.getExcelFiles();
           console.log("📊 DEBUG: Found files to merge:", mergeFiles.length);
-          console.log("📊 DEBUG: File details:", mergeFiles.map(f => ({ name: f.name, id: f.id })));
+          console.log(
+            "📊 DEBUG: File details:",
+            mergeFiles.map((f) => ({ name: f.name, id: f.id }))
+          );
 
           if (mergeFiles.length === 0) {
             return "📊 No Excel files found in your OneDrive. Please upload some Excel files (.xlsx or .xls) to your OneDrive root folder and try again.";
@@ -667,17 +696,6 @@ export class IntelligentWorkflowProcessor {
 
           if (mergeFiles.length < 2) {
             return `📊 Found only 1 Excel file: "${mergeFiles[0]?.name}". Need at least 2 files to merge. Please upload more Excel files to your OneDrive.`;
-=======
-          const mergeFiles = await graphService.getExcelFiles();
-          console.log("📊 DEBUG: Found files to merge:", mergeFiles.length);
-
-          if (mergeFiles.length === 0) {
-            return "📊 No Excel files found to merge. Please upload some Excel files first.";
-          }
-
-          if (mergeFiles.length < 2) {
-            return "📊 Found only 1 Excel file. Need at least 2 files to merge. Please upload more Excel files.";
->>>>>>> d7fea82 (🚀 Major Enhancement: Real Excel Data Processing, Folder Search & Statistical Analysis)
           }
 
           // Extract the desired filename from the action parameters or context
@@ -912,15 +930,17 @@ export class IntelligentWorkflowProcessor {
           return resultMessage;
         } catch (error) {
           console.error("📊 ERROR: Failed to merge Excel files:", error);
-<<<<<<< HEAD
           console.error("📊 ERROR: Error details:", {
             message: error.message,
             code: error.code,
-            status: error.status
+            status: error.status,
           });
 
           // Handle different error types more specifically
-          if (error.message?.includes("Item not found") || error.code === "itemNotFound") {
+          if (
+            error.message?.includes("Item not found") ||
+            error.code === "itemNotFound"
+          ) {
             return "📊 No Excel files found in your OneDrive. Please upload some Excel files (.xlsx or .xls) to your OneDrive root folder and try again.";
           } else if (
             error.message?.includes("Forbidden") ||
@@ -935,57 +955,36 @@ export class IntelligentWorkflowProcessor {
             error.status === 423
           ) {
             return "📊 Cannot merge files because one or more Excel files are currently locked (likely open in Excel desktop app). Please close all Excel files and try again.";
-          } else if (error.message?.includes("InvalidArgument") || error.code === "InvalidArgument") {
+          } else if (
+            error.message?.includes("InvalidArgument") ||
+            error.code === "InvalidArgument"
+          ) {
             return "📊 There was an issue reading the Excel file format. Please ensure your Excel files are valid .xlsx or .xls files and try again.";
           } else {
-            return `📊 Error merging Excel files: ${error.message || 'Unknown error'}. Please check that you have Excel files in your OneDrive and try again.`;
-=======
-
-          if (error.message?.includes("Item not found")) {
-            return "📊 Unable to access Excel files for merging. Please ensure you have Excel files in your OneDrive and try again.";
-          } else if (
-            error.message?.includes("Forbidden") ||
-            error.message?.includes("Unauthorized")
-          ) {
-            return "📊 Permission denied when trying to merge files. Please check your file access permissions.";
-          } else if (
-            error.message?.includes("locked") ||
-            error.message?.includes("Locked")
-          ) {
-            return "📊 Cannot merge files because one or more Excel files are currently locked (likely open in Excel desktop app). Please close all Excel files and try again.";
-          } else {
-            return `📊 Error merging Excel files: ${error.message}. Please try again or contact support if the issue persists.`;
->>>>>>> d7fea82 (🚀 Major Enhancement: Real Excel Data Processing, Folder Search & Statistical Analysis)
+            return `📊 Error merging Excel files: ${
+              error.message || "Unknown error"
+            }. Please check that you have Excel files in your OneDrive and try again.`;
           }
         }
       }
 
       case "analyze": {
-        // Check if the user is asking to analyze files from a specific folder
-        const folderMatch = this.extractFolderFromPrompt(context.prompt);
-        let analysisFiles: any[] = [];
-        
-        if (folderMatch) {
-          console.log(`📁 Looking for Excel files to analyze in folder: "${folderMatch}"`);
-          analysisFiles = await graphService.getExcelFilesInFolder(folderMatch);
-        } else {
-          console.log(`📊 Looking for Excel files to analyze in all folders`);
-          analysisFiles = await graphService.getExcelFiles();
-        }
-        
+        console.log(`� Looking for Excel files to analyze`);
+        const analysisFiles = await graphService.getExcelFiles();
+
         if (analysisFiles.length === 0) {
-          const folderInfo = folderMatch ? ` in folder "${folderMatch}"` : "";
-          return `📊 No Excel files found to analyze${folderInfo}`;
+          return `📊 No Excel files found to analyze`;
         }
 
-        console.log(`📊 Starting statistical analysis of ${analysisFiles.length} Excel files...`);
+        console.log(
+          `📊 Starting statistical analysis of ${analysisFiles.length} Excel files...`
+        );
 
         let totalRows = 0;
         let totalWorksheets = 0;
-        const fileAnalysis: string[] = [];
+        const analysisDescriptions: string[] = [];
         const processedFiles: string[] = [];
         const skippedFiles: string[] = [];
-        const statisticalResults: any[] = [];
 
         // Analyze up to 5 files to avoid overwhelming the system
         const filesToAnalyze = analysisFiles.slice(0, 5);
@@ -993,7 +992,7 @@ export class IntelligentWorkflowProcessor {
         for (const file of filesToAnalyze) {
           try {
             console.log(`📊 Analyzing file: ${file.name} (ID: ${file.id})`);
-            
+
             await complianceLogger.logFileAccess(
               complianceLogId,
               file.id,
@@ -1011,102 +1010,90 @@ export class IntelligentWorkflowProcessor {
               (sum, ws) => sum + (ws.data?.length || 0),
               0
             );
-            
+
             totalRows += fileRowCount;
             totalWorksheets += workbook.worksheets.length;
-            
-            // Perform statistical analysis
-            const analysisResult = await graphService.analyzeExcelData(file.id);
-            
-            if (analysisResult) {
-              console.log(`📊 Statistical analysis completed for ${file.name}`);
-              
-              statisticalResults.push({
-                fileName: file.name,
-                ...analysisResult
-              });
-              
-              // Create detailed analysis description
-              const stats = analysisResult.statistics;
-              const columnInfo = `"${analysisResult.columnName}" column`;
-              
-              fileAnalysis.push(
-                `📋 ${file.name}: Analyzed ${columnInfo} with ${stats.count} values\n` +
-                `   📈 Best: ${stats.best} | 📉 Worst: ${stats.worst} | 📊 Average: ${stats.average}\n` +
-                `   💰 Sum: ${stats.sum} | 🎯 Median: ${stats.median}`
-              );
-            } else {
-              // Fallback to basic analysis if statistical analysis fails
-              const worksheetInfo = workbook.worksheets.map(ws => {
-                const rowCount = ws.data?.length || 0;
-                const columnCount = ws.data && ws.data.length > 0 ? ws.data[0]?.length || 0 : 0;
-                return `"${ws.name}" (${rowCount} rows, ${columnCount} columns)`;
-              }).join(", ");
-              
-              fileAnalysis.push(`📋 ${file.name}: ${workbook.worksheets.length} sheets - ${worksheetInfo}`);
-            }
-            
+
+            // Perform basic analysis
+            console.log(`📊 Basic analysis completed for ${file.name}`);
+
+            // Create simple analysis description
+            analysisDescriptions.push(
+              `• ${file.name}: ${fileRowCount} rows across ${workbook.worksheets.length} worksheets`
+            );
+
             processedFiles.push(file.name);
-            console.log(`✅ Successfully analyzed: ${file.name} - ${fileRowCount} rows`);
-            
+            console.log(
+              `✅ Successfully analyzed: ${file.name} - ${fileRowCount} rows`
+            );
           } catch (error) {
             console.warn(`❌ Could not analyze ${file.name}:`, error);
             skippedFiles.push(file.name);
-            
+
             // Basic error categorization
             if (error instanceof Error) {
-              if (error.message.includes('423') || error.message.includes('locked')) {
-                console.log(`🔒 File is locked: ${file.name} - Likely being edited or checked out`);
-              } else if (error.message.includes('403') || error.message.includes('Forbidden')) {
-                console.log(`🚫 Access denied: ${file.name} - Insufficient permissions`);
-              } else if (error.message.includes('404') || error.message.includes('not found')) {
-                console.log(`❓ File not found: ${file.name} - May have been moved or deleted`);
-              } else if (error.message.includes('409')) {
-                console.log(`⚠️ File conflict: ${file.name} - Version or editing conflict`);
+              if (
+                error.message.includes("423") ||
+                error.message.includes("locked")
+              ) {
+                console.log(
+                  `🔒 File is locked: ${file.name} - Likely being edited or checked out`
+                );
+              } else if (
+                error.message.includes("403") ||
+                error.message.includes("Forbidden")
+              ) {
+                console.log(
+                  `🚫 Access denied: ${file.name} - Insufficient permissions`
+                );
+              } else if (
+                error.message.includes("404") ||
+                error.message.includes("not found")
+              ) {
+                console.log(
+                  `❓ File not found: ${file.name} - May have been moved or deleted`
+                );
+              } else if (error.message.includes("409")) {
+                console.log(
+                  `⚠️ File conflict: ${file.name} - Version or editing conflict`
+                );
               } else {
-                console.log(`❌ Unknown error for ${file.name}:`, error.message);
+                console.log(
+                  `❌ Unknown error for ${file.name}:`,
+                  error.message
+                );
               }
             }
           }
         }
 
-        console.log(`� Analysis complete. Processed: ${processedFiles.length}, Skipped: ${skippedFiles.length}, Total rows: ${totalRows}`);
+        console.log(
+          `� Analysis complete. Processed: ${processedFiles.length}, Skipped: ${skippedFiles.length}, Total rows: ${totalRows}`
+        );
 
         if (processedFiles.length === 0) {
-          return `❌ Could not analyze any Excel files - all ${filesToAnalyze.length} files were inaccessible or locked. Skipped: ${skippedFiles.join(", ")}`;
+          return `❌ Could not analyze any Excel files - all ${
+            filesToAnalyze.length
+          } files were inaccessible or locked. Skipped: ${skippedFiles.join(
+            ", "
+          )}`;
         }
 
         // Build comprehensive result message
         let resultMessage = `📈 Analyzed ${processedFiles.length} Excel files with ${totalRows} total rows across ${totalWorksheets} worksheets`;
-        
-        if (statisticalResults.length > 0) {
-          resultMessage += `\n\n📊 Statistical Analysis Results:`;
-          
-          // Calculate overall statistics if we have multiple files
-          if (statisticalResults.length > 1) {
-            const allBestValues = statisticalResults.map(r => r.statistics.best);
-            const allWorstValues = statisticalResults.map(r => r.statistics.worst);
-            const allAverages = statisticalResults.map(r => r.statistics.average);
-            
-            const overallBest = Math.max(...allBestValues);
-            const overallWorst = Math.min(...allWorstValues);
-            const overallAverage = allAverages.reduce((sum, avg) => sum + avg, 0) / allAverages.length;
-            
-            resultMessage += `\n🏆 Overall Best Performance: ${overallBest}`;
-            resultMessage += `\n📉 Overall Worst Performance: ${overallWorst}`;
-            resultMessage += `\n📊 Overall Average Performance: ${Math.round(overallAverage * 100) / 100}`;
-            resultMessage += `\n`;
-          }
+
+        if (analysisDescriptions.length > 0) {
+          resultMessage += `\n\n📋 File Details:\n${analysisDescriptions.join(
+            "\n"
+          )}`;
         }
-        
-        if (fileAnalysis.length > 0) {
-          resultMessage += `\n\n📋 Detailed Analysis:\n${fileAnalysis.join("\n\n")}`;
-        }
-        
+
         if (skippedFiles.length > 0) {
-          resultMessage += `\n\n⚠️ Skipped files (locked/inaccessible): ${skippedFiles.join(", ")}`;
+          resultMessage += `\n\n⚠️ Skipped files (locked/inaccessible): ${skippedFiles.join(
+            ", "
+          )}`;
         }
-        
+
         return resultMessage;
       }
 
@@ -1195,7 +1182,8 @@ export class IntelligentWorkflowProcessor {
         ];
 
         // Note: This creates a placeholder file - full PowerPoint API integration would be needed for actual slides
-        const sanitizedPresentationName = this.sanitizeFileName(presentationName);
+        const sanitizedPresentationName =
+          this.sanitizeFileName(presentationName);
         const fileId = await graphService.createWordDocument(
           sanitizedPresentationName,
           "PowerPoint presentation content"
@@ -1394,39 +1382,6 @@ export class IntelligentWorkflowProcessor {
     }
 
     console.log("🔍 DEBUG: No title found in prompt");
-<<<<<<< HEAD
-=======
-    return null;
-  }
-
-  private extractFolderFromPrompt(prompt: string): string | null {
-    // Look for various folder name patterns
-    
-    // Pattern: "in folder named X" or "in my X folder"
-    const folderPatterns = [
-      /(?:in|from)\s+(?:the\s+)?folder\s+(?:named\s+)?"?([^"]+?)"?(?:\s|$)/i,
-      /(?:in|from)\s+(?:my\s+)?"?([^"]+?)"?\s+folder/i,
-      /files?\s+in\s+"?([^"]+?)"?(?:\s|$)/i,
-      /show\s+me\s+(?:the\s+)?files?\s+in\s+(?:my\s+)?"?([^"]+?)"?(?:\s|$)/i,
-      /get\s+files?\s+from\s+"?([^"]+?)"?(?:\s|$)/i,
-      /list\s+files?\s+in\s+"?([^"]+?)"?(?:\s|$)/i,
-      /analyze\s+(?:the\s+)?files?\s+in\s+"?([^"]+?)"?(?:\s|$)/i,
-      /merge\s+(?:the\s+)?files?\s+in\s+"?([^"]+?)"?(?:\s|$)/i
-    ];
-    
-    for (const pattern of folderPatterns) {
-      const match = prompt.match(pattern);
-      if (match) {
-        const folderName = match[1].trim();
-        // Filter out common words that aren't folder names
-        if (!['the', 'my', 'all', 'any', 'some', 'these', 'those'].includes(folderName.toLowerCase())) {
-          console.log(`📁 Extracted folder name: "${folderName}" from prompt: "${prompt}"`);
-          return folderName;
-        }
-      }
-    }
-    
->>>>>>> d7fea82 (🚀 Major Enhancement: Real Excel Data Processing, Folder Search & Statistical Analysis)
     return null;
   }
 
@@ -1703,13 +1658,12 @@ Your Microsoft 365 environment has been updated with complete compliance documen
     // Return a number between 1-3 based on hash
     return Math.abs(hash % 3) + 1;
   }
-<<<<<<< HEAD
 
   // Helper method to format dates safely for file names (no forward slashes)
   private formatDateForFileName(date: Date = new Date()): string {
     const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
     return `${year}-${month}-${day}`;
   }
 
@@ -1718,12 +1672,10 @@ Your Microsoft 365 environment has been updated with complete compliance documen
     // Remove or replace invalid characters for OneDrive/SharePoint filenames
     // Invalid chars: / \ : * ? " < > |
     return filename
-      .replace(/[/\\:*?"<>|]/g, '-')
-      .replace(/\s+/g, ' ')
+      .replace(/[/\\:*?"<>|]/g, "-")
+      .replace(/\s+/g, " ")
       .trim();
   }
-=======
->>>>>>> d7fea82 (🚀 Major Enhancement: Real Excel Data Processing, Folder Search & Statistical Analysis)
 }
 
 // Export singleton instance

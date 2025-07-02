@@ -4,6 +4,8 @@ import { Text, Spinner } from "@fluentui/react-components";
 import { motion, AnimatePresence } from "framer-motion";
 import { WorkflowInterface } from "./WorkflowInterface";
 import { WelcomeScreen } from "./WelcomeScreen";
+import { TransportationDemo } from "./TransportationDemo";
+import { RosterManagementDemo } from "./RosterManagementDemo";
 
 export const SimplifiedApp: React.FC = () => {
   const isAuthenticated = useIsAuthenticated();
@@ -11,7 +13,19 @@ export const SimplifiedApp: React.FC = () => {
   const [showTransition, setShowTransition] = useState(false);
   const [isReady, setIsReady] = useState(false);
 
+  // Check URL parameters for demo mode
+  const urlParams = new URLSearchParams(window.location.search);
+  const demoMode = urlParams.get("demo");
+
+  // If demo mode, skip authentication flow and go straight to demo
   useEffect(() => {
+    if (demoMode === "transportation" || demoMode === "roster") {
+      setShowWelcome(false);
+      setShowTransition(false);
+      setIsReady(true);
+      return;
+    }
+
     if (isAuthenticated && showWelcome) {
       // Start transition when user authenticates
       setShowWelcome(false);
@@ -19,7 +33,7 @@ export const SimplifiedApp: React.FC = () => {
     } else if (isAuthenticated) {
       setIsReady(true);
     }
-  }, [isAuthenticated, showWelcome]);
+  }, [isAuthenticated, showWelcome, demoMode]);
 
   // Handle transition timer when showTransition changes
   useEffect(() => {
@@ -115,13 +129,41 @@ export const SimplifiedApp: React.FC = () => {
 
   return (
     <AnimatePresence mode="wait">
-      {showWelcome ? (
+      {/* Handle demo modes first */}
+      {demoMode === "transportation" && (
+        <motion.div
+          key="transportation-demo"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <TransportationDemo />
+        </motion.div>
+      )}
+
+      {demoMode === "roster" && (
+        <motion.div
+          key="roster-demo"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <RosterManagementDemo />
+        </motion.div>
+      )}
+
+      {/* Main app flow (only if not in demo mode) */}
+      {!demoMode && showWelcome && (
         <WelcomeScreen
           key="welcome"
           onGetStarted={handleGetStarted}
           onStartDemo={() => {}} // Simplified - no demo mode
         />
-      ) : isReady ? (
+      )}
+
+      {!demoMode && !showWelcome && isReady && (
         <motion.div
           key="workflow"
           initial={{ opacity: 0 }}
@@ -131,7 +173,7 @@ export const SimplifiedApp: React.FC = () => {
         >
           <WorkflowInterface />
         </motion.div>
-      ) : null}
+      )}
     </AnimatePresence>
   );
 };

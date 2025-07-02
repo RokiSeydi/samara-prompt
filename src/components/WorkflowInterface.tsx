@@ -80,11 +80,17 @@ interface QuickAction {
   primary?: boolean;
 }
 
-export const WorkflowInterface: React.FC = () => {
+interface WorkflowInterfaceProps {
+  initialPrompt?: string;
+}
+
+export const WorkflowInterface: React.FC<WorkflowInterfaceProps> = ({
+  initialPrompt,
+}) => {
   const { instance, accounts } = useMsal();
   const { dispatchToast } = useToastController();
   const { documents } = useGraphData();
-  const [prompt, setPrompt] = useState("");
+  const [prompt, setPrompt] = useState(initialPrompt || "");
   const [isProcessing, setIsProcessing] = useState(false);
   const [currentWorkflow, setCurrentWorkflow] = useState<WorkflowResult | null>(
     null
@@ -361,7 +367,6 @@ export const WorkflowInterface: React.FC = () => {
                     "https://m365.cloud.microsoft/onedrive",
                     "_blank"
                   ),
-<<<<<<< HEAD
               },
             ],
           });
@@ -440,8 +445,6 @@ export const WorkflowInterface: React.FC = () => {
                     "https://m365.cloud.microsoft/onedrive",
                     "_blank"
                   ),
-=======
->>>>>>> d7fea82 (🚀 Major Enhancement: Real Excel Data Processing, Folder Search & Statistical Analysis)
               },
             ],
           });

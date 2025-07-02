@@ -5,6 +5,7 @@ interface RealAICommandContext {
   command: string;
   accessToken: string;
   availableDocuments: any[];
+  prompt?: string; // Add prompt to context for roster-aware filtering
 }
 
 export class RealAICommandProcessor {
@@ -58,7 +59,7 @@ export class RealAICommandProcessor {
 
     switch (action.app) {
       case "excel":
-        return await this.executeExcelAction(action, graphService);
+        return await this.executeExcelAction(action, graphService, context);
       case "word":
         return await this.executeWordAction(action, graphService);
       case "powerpoint":
@@ -74,9 +75,62 @@ export class RealAICommandProcessor {
 
   private async executeExcelAction(
     action: any,
-    graphService: GraphApiService
+    graphService: GraphApiService,
+    context?: RealAICommandContext
   ): Promise<string> {
     switch (action.action) {
+      case "list":
+        // Use roster-aware file listing when appropriate
+        const rosterKeywords = [
+          "roster",
+          "driver",
+          "schedule",
+          "shift",
+          "rota",
+          "staff",
+          "crew",
+          "allocation",
+          "assignment",
+          "weekly",
+          "coverage",
+        ];
+        const isRosterRequest =
+          context?.prompt &&
+          rosterKeywords.some((keyword) =>
+            context.prompt!.toLowerCase().includes(keyword)
+          );
+
+        if (isRosterRequest) {
+          const rosterFiles = await graphService.findRosterExcelFiles();
+          if (rosterFiles.length === 0) {
+            return "📊 No roster-related Excel files found. Make sure you have files with names containing 'roster', 'driver', 'schedule', or 'shift'.";
+          }
+          const fileList = rosterFiles
+            .slice(0, 10)
+            .map(
+              (file, index) =>
+                `${index + 1}. ${file.name} (modified ${new Date(
+                  file.lastModifiedDateTime
+                ).toLocaleDateString()})`
+            )
+            .join("\n");
+          return `📊 Found ${rosterFiles.length} roster-related Excel files:\n\n${fileList}`;
+        } else {
+          const allFiles = await graphService.getExcelFiles();
+          if (allFiles.length === 0) {
+            return "📊 No Excel files found in your OneDrive.";
+          }
+          const fileList = allFiles
+            .slice(0, 10)
+            .map(
+              (file, index) =>
+                `${index + 1}. ${file.name} (modified ${new Date(
+                  file.lastModifiedDateTime
+                ).toLocaleDateString()})`
+            )
+            .join("\n");
+          return `📊 Found ${allFiles.length} Excel files:\n\n${fileList}`;
+        }
       case "merge":
         return await this.mergeExcelFiles(graphService);
       case "analyze":
@@ -84,7 +138,7 @@ export class RealAICommandProcessor {
       case "calculate":
         return await this.calculateMetrics(graphService, action.parameters);
       case "extract":
-        return await this.extractExcelData(graphService);
+        return await this.extractExcelData(graphService, context?.prompt);
       default:
         return `📊 Performed ${action.action} on Excel data`;
     }
@@ -106,7 +160,7 @@ export class RealAICommandProcessor {
         new Date().toISOString().split("T")[0]
       }.xlsx`;
 
-      console.log(`📊 Attempting to merge files: ${fileNames.join(', ')}`);
+      console.log(`📊 Attempting to merge files: ${fileNames.join(", ")}`);
 
       const mergedFileId = await this.mergeExcelFilesBasic(
         graphService,
@@ -114,7 +168,10 @@ export class RealAICommandProcessor {
         outputName
       );
 
-      return `📊 Excel merge completed! Check the detailed results above. Output file: "${outputName.replace('.xlsx', '.txt')}"`;  // Note: Actually creates .txt file
+      return `📊 Excel merge completed! Check the detailed results above. Output file: "${outputName.replace(
+        ".xlsx",
+        ".txt"
+      )}"`; // Note: Actually creates .txt file
     } catch (error) {
       throw new Error(`Excel merge failed: ${error.message}`);
     }
@@ -172,14 +229,7 @@ export class RealAICommandProcessor {
         try {
           const workbook = await graphService.readExcelWorkbook(file.id);
           if (workbook.worksheets.length > 0) {
-<<<<<<< HEAD
             const metrics = await graphService.calculateExcelMetrics(file.id);
-=======
-            const metrics = await this.calculateExcelMetrics(
-              graphService,
-              file.id
-            );
->>>>>>> d7fea82 (🚀 Major Enhancement: Real Excel Data Processing, Folder Search & Statistical Analysis)
             results[file.name] = metrics;
           }
         } catch (error) {
@@ -206,31 +256,73 @@ export class RealAICommandProcessor {
   }
 
   private async extractExcelData(
-    graphService: GraphApiService
+    graphService: GraphApiService,
+    prompt?: string
   ): Promise<string> {
     try {
-      const excelFiles = await graphService.getExcelFiles();
+      // Check if this is a roster-related request
+      const rosterKeywords = [
+        "roster",
+        "driver",
+        "schedule",
+        "shift",
+        "rota",
+        "staff",
+        "crew",
+        "allocation",
+        "assignment",
+        "weekly",
+        "coverage",
+      ];
+      const isRosterRequest =
+        prompt &&
+        rosterKeywords.some((keyword) =>
+          prompt.toLowerCase().includes(keyword)
+        );
+
+      let excelFiles;
+      if (isRosterRequest) {
+        console.log("🔍 Extracting data from roster-specific Excel files");
+        excelFiles = await graphService.findRosterExcelFiles();
+      } else {
+        excelFiles = await graphService.getExcelFiles();
+      }
 
       if (excelFiles.length === 0) {
-        return "📊 No Excel files found to extract data from";
+        if (isRosterRequest) {
+          return "📊 No roster-related Excel files found to extract data from. Make sure you have files with names containing 'roster', 'driver', 'schedule', or 'shift'.";
+        } else {
+          return "📊 No Excel files found to extract data from";
+        }
       }
 
       let totalRecords = 0;
       let filesProcessed = 0;
+      const fileDetails = [];
 
       for (const file of excelFiles.slice(0, 3)) {
         try {
           const workbook = await graphService.readExcelWorkbook(file.id);
+          let fileRecords = 0;
           for (const worksheet of workbook.worksheets) {
-            totalRecords += Math.max(0, worksheet.data.length - 1); // Exclude header
+            const records = Math.max(0, worksheet.data.length - 1); // Exclude header
+            fileRecords += records;
+            totalRecords += records;
           }
           filesProcessed++;
+          fileDetails.push(`${file.name}: ${fileRecords} records`);
         } catch (error) {
           console.warn(`Could not extract data from ${file.name}:`, error);
         }
       }
 
-      return `📋 Extracted ${totalRecords} records from ${filesProcessed} Excel files`;
+      const resultMessage = isRosterRequest
+        ? `📋 Extracted ${totalRecords} roster records from ${filesProcessed} files:\n${fileDetails.join(
+            "\n"
+          )}`
+        : `📋 Extracted ${totalRecords} records from ${filesProcessed} Excel files`;
+
+      return resultMessage;
     } catch (error) {
       throw new Error(`Data extraction failed: ${error.message}`);
     }
@@ -264,7 +356,10 @@ export class RealAICommandProcessor {
 
       const fileId = await graphService.createWordDocument(reportName, content);
 
-      return `� Created text document: "${reportName.replace('.docx', '.txt')}" - Note: Currently creating text files instead of Word documents for better compatibility.`;
+      return `� Created text document: "${reportName.replace(
+        ".docx",
+        ".txt"
+      )}" - Note: Currently creating text files instead of Word documents for better compatibility.`;
     } catch (error) {
       throw new Error(`Word document creation failed: ${error.message}`);
     }
@@ -304,13 +399,8 @@ export class RealAICommandProcessor {
 
       for (const file of wordFiles.slice(0, 3)) {
         try {
-<<<<<<< HEAD
           const docContent = await graphService.readWordDocument(file.id);
           mergedContent += `\n\n=== ${file.name} ===\n${docContent}`;
-=======
-          const doc = await this.readWordDocument(graphService, file.id);
-          mergedContent += `\n\n=== ${file.name} ===\n${doc.content}`;
->>>>>>> d7fea82 (🚀 Major Enhancement: Real Excel Data Processing, Folder Search & Statistical Analysis)
         } catch (error) {
           console.warn(`Could not read ${file.name}:`, error);
         }
@@ -324,7 +414,10 @@ export class RealAICommandProcessor {
       return `📄 Merged ${Math.min(
         3,
         wordFiles.length
-      )} Word documents into text file "${mergedName.replace('.docx', '.txt')}" - Note: Currently creating text files for better compatibility.`;
+      )} Word documents into text file "${mergedName.replace(
+        ".docx",
+        ".txt"
+      )}" - Note: Currently creating text files for better compatibility.`;
     } catch (error) {
       throw new Error(`Word merge failed: ${error.message}`);
     }
@@ -357,10 +450,15 @@ export class RealAICommandProcessor {
       const fileId = await this.createPowerPointPresentation(
         graphService,
         presentationName,
-        slides.map(slide => `${slide.title}: ${slide.content}`).join('\n\n')
+        slides.map((slide) => `${slide.title}: ${slide.content}`).join("\n\n")
       );
 
-      return `� Created presentation content document: "${presentationName.replace('.pptx', '_Presentation_Content.txt')}" with ${slides.length} slides worth of content. Note: This is a text file with presentation content - full PowerPoint creation is not yet implemented.`;
+      return `� Created presentation content document: "${presentationName.replace(
+        ".pptx",
+        "_Presentation_Content.txt"
+      )}" with ${
+        slides.length
+      } slides worth of content. Note: This is a text file with presentation content - full PowerPoint creation is not yet implemented.`;
     } catch (error) {
       throw new Error(`PowerPoint creation failed: ${error.message}`);
     }
@@ -536,20 +634,9 @@ All calculations and recommendations are based on actual data from your Microsof
       for (const fileId of fileIds) {
         try {
           console.log(`📊 Attempting to read file: ${fileId}`);
-          
-          // First, try to get basic file info to check if we can access it
-          const fileInfo = await graphService.getFileInfo(fileId);
-          console.log(`📊 File info retrieved: ${fileInfo.name}`);
-          
-          // Check if file is locked or checked out
-          if (fileInfo.file && fileInfo.file.checkout) {
-            console.warn(`⚠️ File ${fileInfo.name} is checked out by: ${fileInfo.file.checkout.checkedOutBy?.user?.displayName || 'another user'}`);
-            skippedFiles.push(`${fileInfo.name} (checked out)`);
-            continue;
-          }
 
           const workbook = await graphService.readExcelWorkbook(fileId);
-          accessibleFiles.push(fileInfo.name);
+          accessibleFiles.push(fileId); // Use fileId as placeholder name
 
           // Get data from the first worksheet with data
           for (const worksheet of workbook.worksheets) {
@@ -563,39 +650,46 @@ All calculations and recommendations are based on actual data from your Microsof
               // Add data rows (skip header row)
               const dataRows = worksheet.data.slice(1);
               allData.push(...dataRows);
-              console.log(`📊 Added ${dataRows.length} rows from ${fileInfo.name}`);
+              console.log(
+                `📊 Added ${dataRows.length} rows from file ${fileId}`
+              );
               break;
             }
           }
         } catch (error) {
           console.error(`❌ Could not access file ${fileId}:`, error);
-          
+
           // Try to get file name for better error reporting
           let fileName = fileId;
           try {
-            const fileInfo = await graphService.getFileInfo(fileId);
-            fileName = fileInfo.name;
+            const file = await graphService.getFileInfo(fileId);
+            fileName = file.name;
           } catch (nameError) {
             // Ignore, use fileId as name
           }
 
           // Categorize the error
-          if (error.code === 'Forbidden' || error.code === 403) {
+          if (error.code === "Forbidden" || error.code === 403) {
             skippedFiles.push(`${fileName} (permission denied)`);
-          } else if (error.code === 'Locked' || error.code === 423) {
+          } else if (error.code === "Locked" || error.code === 423) {
             skippedFiles.push(`${fileName} (file locked)`);
-          } else if (error.code === 'ItemNotFound' || error.code === 404) {
+          } else if (error.code === "ItemNotFound" || error.code === 404) {
             skippedFiles.push(`${fileName} (not found)`);
           } else {
-            skippedFiles.push(`${fileName} (${error.message || 'access error'})`);
+            skippedFiles.push(
+              `${fileName} (${error.message || "access error"})`
+            );
           }
         }
       }
 
       if (allData.length <= 1) {
-        const errorMessage = skippedFiles.length > 0 
-          ? `No accessible data found to merge. Skipped files: ${skippedFiles.join(', ')}`
-          : "No data found to merge from any files";
+        const errorMessage =
+          skippedFiles.length > 0
+            ? `No accessible data found to merge. Skipped files: ${skippedFiles.join(
+                ", "
+              )}`
+            : "No data found to merge from any files";
         throw new Error(errorMessage);
       }
 
@@ -607,18 +701,21 @@ All calculations and recommendations are based on actual data from your Microsof
       console.log(`📊 DEBUG: Last few data rows:`, allData.slice(-3));
 
       // Create the merged workbook
-      const mergedFileId = await graphService.createExcelWorkbook(
-        outputName,
-        [{ sheetName: "Merged Data", data: allData }]
-      );
+      const mergedFileId = await graphService.createExcelWorkbook(outputName, [
+        { sheetName: "Merged Data", data: allData },
+      ]);
 
       // Create detailed success message
       let resultMessage = `✅ Successfully merged data into ${outputName}`;
       if (accessibleFiles.length > 0) {
-        resultMessage += `\n📊 Merged ${accessibleFiles.length} files: ${accessibleFiles.join(', ')}`;
+        resultMessage += `\n📊 Merged ${
+          accessibleFiles.length
+        } files: ${accessibleFiles.join(", ")}`;
       }
       if (skippedFiles.length > 0) {
-        resultMessage += `\n⚠️ Skipped ${skippedFiles.length} files: ${skippedFiles.join(', ')}`;
+        resultMessage += `\n⚠️ Skipped ${
+          skippedFiles.length
+        } files: ${skippedFiles.join(", ")}`;
         resultMessage += `\n💡 Tip: Check if skipped files are checked out by other users or have restricted permissions.`;
       }
 
@@ -687,7 +784,8 @@ All calculations and recommendations are based on actual data from your Microsof
     // We could potentially get the file content as binary and try to parse it,
     // but for now, return a placeholder
     return {
-      content: "[Word document content - full text extraction not yet implemented]",
+      content:
+        "[Word document content - full text extraction not yet implemented]",
     };
   }
 
@@ -703,7 +801,7 @@ All calculations and recommendations are based on actual data from your Microsof
       "⚠️ PowerPoint creation not fully implemented, creating document with presentation content instead"
     );
 
-    const fileName = title.replace('.pptx', '_Presentation_Content.txt');
+    const fileName = title.replace(".pptx", "_Presentation_Content.txt");
     const presentationContent = `PRESENTATION CONTENT: ${title}
     
 ${content}
