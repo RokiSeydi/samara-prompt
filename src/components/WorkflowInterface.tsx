@@ -361,6 +361,7 @@ export const WorkflowInterface: React.FC = () => {
                     "https://m365.cloud.microsoft/onedrive",
                     "_blank"
                   ),
+<<<<<<< HEAD
               },
             ],
           });
@@ -439,6 +440,8 @@ export const WorkflowInterface: React.FC = () => {
                     "https://m365.cloud.microsoft/onedrive",
                     "_blank"
                   ),
+=======
+>>>>>>> d7fea82 (🚀 Major Enhancement: Real Excel Data Processing, Folder Search & Statistical Analysis)
               },
             ],
           });

@@ -27,6 +27,10 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { useMsal } from "@azure/msal-react";
 import { RealAICommandProcessor } from "../services/realAICommands";
+<<<<<<< HEAD
+=======
+
+>>>>>>> d7fea82 (🚀 Major Enhancement: Real Excel Data Processing, Folder Search & Statistical Analysis)
 import { loginRequest } from "../config/msalConfig";
 import { useGraphData } from "../hooks/useGraphData";
 
@@ -209,6 +213,42 @@ export const AICommandInterface: React.FC<AICommandInterfaceProps> = ({
     };
   };
 
+<<<<<<< HEAD
+=======
+  const executeDemoCommand = async (
+    command: string,
+    apps: string[]
+  ): Promise<AICommand> => {
+    console.log("🎭 Executing real AI command:", command);
+
+    const account = accounts[0];
+    if (!account) throw new Error("No account found");
+
+    const response = await instance.acquireTokenSilent({
+      ...loginRequest,
+      account: account,
+    });
+
+    const processor = new RealAICommandProcessor();
+    const result = await processor.processCommand({
+      command,
+      accessToken: response.accessToken,
+      availableDocuments: documents,
+    });
+
+    return {
+      id: Date.now().toString(),
+      command,
+      status: "completed",
+      result: result,
+      timestamp: new Date(),
+      apps,
+      documentsUsed: [],
+      outputFiles: [],
+    };
+  };
+
+>>>>>>> d7fea82 (🚀 Major Enhancement: Real Excel Data Processing, Folder Search & Statistical Analysis)
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!command.trim() || isProcessing) return;

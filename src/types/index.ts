@@ -28,8 +28,17 @@ export interface WorkflowResult {
 export interface OfficeDocument {
   id: string;
   name: string;
+<<<<<<< HEAD
   type: "excel" | "word" | "powerpoint" | "onenote" | "other";
   lastModified: Date;
   webUrl?: string;
   size?: number;
 }
+=======
+  type: string;
+  webUrl?: string;
+  lastModified?: string;
+  size?: number;
+  summary?: string;
+}
+>>>>>>> d7fea82 (🚀 Major Enhancement: Real Excel Data Processing, Folder Search & Statistical Analysis)

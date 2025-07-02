@@ -1,4 +1,9 @@
+<<<<<<< HEAD
 import { Configuration, PopupRequest, LogLevel } from "@azure/msal-browser";
+=======
+import type { Configuration, PopupRequest } from "@azure/msal-browser";
+import { LogLevel } from "@azure/msal-browser";
+>>>>>>> d7fea82 (🚀 Major Enhancement: Real Excel Data Processing, Folder Search & Statistical Analysis)
 
 // MSAL configuration
 export const msalConfig: Configuration = {
