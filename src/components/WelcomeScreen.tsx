@@ -333,6 +333,75 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
             </motion.div>
           )}
 
+          {/* Quick Demo Access */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3, duration: 0.6 }}
+            style={{ marginTop: "var(--ms-spacing-xl)" }}
+          >
+            <Text
+              style={{
+                color: "rgba(255, 255, 255, 0.8)",
+                fontSize: "14px",
+                marginBottom: "16px",
+                display: "block",
+              }}
+            >
+              Or try our demos without signing in:
+            </Text>
+            <div
+              style={{
+                display: "flex",
+                gap: "12px",
+                flexWrap: "wrap",
+                justifyContent: "center",
+              }}
+            >
+              <Button
+                appearance="outline"
+                onClick={() =>
+                  (window.location.href = "/?demo=excel-optimizer")
+                }
+                style={{
+                  background: "rgba(255, 255, 255, 0.1)",
+                  border: "1px solid rgba(255, 255, 255, 0.3)",
+                  color: "rgba(255, 255, 255, 0.9)",
+                  fontSize: "13px",
+                  padding: "8px 16px",
+                }}
+              >
+                📊 Excel Optimizer
+              </Button>
+              <Button
+                appearance="outline"
+                onClick={() => (window.location.href = "/?demo=transportation")}
+                style={{
+                  background: "rgba(255, 255, 255, 0.1)",
+                  border: "1px solid rgba(255, 255, 255, 0.3)",
+                  color: "rgba(255, 255, 255, 0.9)",
+                  fontSize: "13px",
+                  padding: "8px 16px",
+                }}
+              >
+                🚌 Transportation Demo
+              </Button>
+              <Button
+                appearance="outline"
+                onClick={() => (window.location.href = "/?demo=roster")}
+                style={{
+                  background: "rgba(255, 255, 255, 0.1)",
+                  border: "1px solid rgba(255, 255, 255, 0.3)",
+                  color: "rgba(255, 255, 255, 0.9)",
+                  fontSize: "13px",
+                  padding: "8px 16px",
+                }}
+              >
+                👥 Roster Demo
+              </Button>
+            </div>
+          </motion.div>
+
           {/* Progress Indicator */}
           {isAuthenticated && (
             <motion.div
@@ -381,7 +450,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
           </div>
 
           {/* Example Workflow */}
-          <div
+          {/* <div
             className="ms-card"
             style={{
               marginTop: "var(--ms-spacing-xxxl)",
@@ -425,7 +494,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
             >
               → Automated in 3 minutes instead of 8 hours of manual work
             </Text>
-          </div>
+          </div> */}
         </motion.div>
       </div>
 
