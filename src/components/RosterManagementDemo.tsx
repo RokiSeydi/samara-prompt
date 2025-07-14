@@ -86,34 +86,61 @@ const renderResultData = (result: any) => {
 
   if (result.app === "Excel" && result.data.changes) {
     return (
-      <div style={{ backgroundColor: "#f8f9fa", padding: "15px", borderRadius: "8px", marginBottom: "15px" }}>
-        <Text style={{ fontSize: "14px", fontWeight: 600, marginBottom: "15px", display: "block", color: "#217346" }}>
+      <div
+        style={{
+          backgroundColor: "#f8f9fa",
+          padding: "15px",
+          borderRadius: "8px",
+          marginBottom: "15px",
+        }}
+      >
+        <Text
+          style={{
+            fontSize: "14px",
+            fontWeight: 600,
+            marginBottom: "15px",
+            display: "block",
+            color: "#217346",
+          }}
+        >
           📊 Updated Roster Changes
         </Text>
         <div style={{ maxHeight: "200px", overflowY: "auto" }}>
           {result.data.changes.map((change: any, i: number) => (
-            <div key={i} style={{ 
-              marginBottom: "10px", 
-              padding: "12px", 
-              backgroundColor: "white", 
-              borderRadius: "6px", 
-              borderLeft: "4px solid #217346",
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              flexWrap: "wrap",
-              gap: "8px"
-            }}>
+            <div
+              key={i}
+              style={{
+                marginBottom: "10px",
+                padding: "12px",
+                backgroundColor: "white",
+                borderRadius: "6px",
+                borderLeft: "4px solid #217346",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                flexWrap: "wrap",
+                gap: "8px",
+              }}
+            >
               <div style={{ flex: 1, minWidth: "200px" }}>
-                <Text style={{ fontSize: "13px", fontWeight: 600, color: "#323130", display: "block" }}>
+                <Text
+                  style={{
+                    fontSize: "13px",
+                    fontWeight: 600,
+                    color: "#323130",
+                    display: "block",
+                  }}
+                >
                   {change.location} • {change.shift}
                 </Text>
-                <Text style={{ fontSize: "12px", color: "#666", display: "block" }}>
+                <Text
+                  style={{ fontSize: "12px", color: "#666", display: "block" }}
+                >
                   {change.change}
                 </Text>
               </div>
-              <Badge 
-                appearance="tint" 
+              <Badge
+                appearance="tint"
                 color="success"
                 style={{ fontSize: "11px", fontWeight: 500 }}
               >
@@ -122,10 +149,23 @@ const renderResultData = (result: any) => {
             </div>
           ))}
         </div>
-        <div style={{ marginTop: "12px", padding: "8px 12px", backgroundColor: "#dff6dd", borderRadius: "4px", display: "flex", alignItems: "center", gap: "8px" }}>
-          <CheckmarkCircleRegular style={{ fontSize: "16px", color: "#107C10" }} />
+        <div
+          style={{
+            marginTop: "12px",
+            padding: "8px 12px",
+            backgroundColor: "#dff6dd",
+            borderRadius: "4px",
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+          }}
+        >
+          <CheckmarkCircleRegular
+            style={{ fontSize: "16px", color: "#107C10" }}
+          />
           <Text style={{ fontSize: "12px", color: "#107C10", fontWeight: 500 }}>
-            {result.data.resolvedShifts} shifts resolved • {result.data.totalDrivers} drivers optimized
+            {result.data.resolvedShifts} shifts resolved •{" "}
+            {result.data.totalDrivers} drivers optimized
           </Text>
         </div>
       </div>
@@ -153,26 +193,89 @@ const renderResultData = (result: any) => {
         >
           📨 Automatic Driver & Manager Alerts
         </Text>
-        <div style={{ marginBottom: "12px", padding: "10px", backgroundColor: "#fff4ce", borderRadius: "6px", borderLeft: "4px solid #f7b900" }}>
-          <Text style={{ fontSize: "12px", fontWeight: 600, color: "#8a6914", display: "block", marginBottom: "4px" }}>
+        <div
+          style={{
+            marginBottom: "12px",
+            padding: "10px",
+            backgroundColor: "#fff4ce",
+            borderRadius: "6px",
+            borderLeft: "4px solid #f7b900",
+          }}
+        >
+          <Text
+            style={{
+              fontSize: "12px",
+              fontWeight: 600,
+              color: "#8a6914",
+              display: "block",
+              marginBottom: "4px",
+            }}
+          >
             🚨 Instant Notifications Sent
           </Text>
           <Text style={{ fontSize: "11px", color: "#8a6914" }}>
-            All affected drivers and managers automatically receive SMS and Teams alerts about roster changes
+            All affected drivers and managers automatically receive SMS and
+            Teams alerts about roster changes
           </Text>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", marginBottom: "12px" }}>
-          <div style={{ padding: "8px", backgroundColor: "#e6f7ff", borderRadius: "4px", textAlign: "center" }}>
-            <Text style={{ fontSize: "16px", fontWeight: 600, color: "#0078D4", display: "block" }}>
-              {result.data.messages.filter((msg: any) => msg.type === "driver").length}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: "8px",
+            marginBottom: "12px",
+          }}
+        >
+          <div
+            style={{
+              padding: "8px",
+              backgroundColor: "#e6f7ff",
+              borderRadius: "4px",
+              textAlign: "center",
+            }}
+          >
+            <Text
+              style={{
+                fontSize: "16px",
+                fontWeight: 600,
+                color: "#0078D4",
+                display: "block",
+              }}
+            >
+              {
+                result.data.messages.filter((msg: any) => msg.type === "driver")
+                  .length
+              }
             </Text>
-            <Text style={{ fontSize: "11px", color: "#666" }}>Drivers Notified</Text>
+            <Text style={{ fontSize: "11px", color: "#666" }}>
+              Drivers Notified
+            </Text>
           </div>
-          <div style={{ padding: "8px", backgroundColor: "#f0f9ff", borderRadius: "4px", textAlign: "center" }}>
-            <Text style={{ fontSize: "16px", fontWeight: 600, color: "#0078D4", display: "block" }}>
-              {result.data.messages.filter((msg: any) => msg.type === "manager").length}
+          <div
+            style={{
+              padding: "8px",
+              backgroundColor: "#f0f9ff",
+              borderRadius: "4px",
+              textAlign: "center",
+            }}
+          >
+            <Text
+              style={{
+                fontSize: "16px",
+                fontWeight: 600,
+                color: "#0078D4",
+                display: "block",
+              }}
+            >
+              {
+                result.data.messages.filter(
+                  (msg: any) => msg.type === "manager"
+                ).length
+              }
             </Text>
-            <Text style={{ fontSize: "11px", color: "#666" }}>Managers Notified</Text>
+            <Text style={{ fontSize: "11px", color: "#666" }}>
+              Managers Notified
+            </Text>
           </div>
         </div>
         {result.data.messages.slice(0, 2).map((message: any, i: number) => (
@@ -183,17 +286,26 @@ const renderResultData = (result: any) => {
               padding: "8px",
               backgroundColor: "white",
               borderRadius: "4px",
-              borderLeft: `3px solid ${message.type === "driver" ? "#107C10" : "#6264A7"}`,
+              borderLeft: `3px solid ${
+                message.type === "driver" ? "#107C10" : "#6264A7"
+              }`,
             }}
           >
-            <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "2px" }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "6px",
+                marginBottom: "2px",
+              }}
+            >
               <Text
                 style={{ fontSize: "13px", fontWeight: 600, color: "#323130" }}
               >
                 {message.recipient}
               </Text>
-              <Badge 
-                appearance="tint" 
+              <Badge
+                appearance="tint"
                 color={message.type === "driver" ? "success" : "brand"}
                 style={{ fontSize: "10px" }}
               >
@@ -298,11 +410,7 @@ const getCurrentProcessingDescription = (progress: number): string => {
 
 export const RosterManagementDemo: React.FC = () => {
   const [currentStep, setCurrentStep] = useState<
-    | "overview"
-    | "processing"
-    | "results"
-    | "roster_view"
-    | "message_preview"
+    "overview" | "processing" | "results" | "roster_view" | "message_preview"
   >("overview");
   const [customPrompt, setCustomPrompt] = useState("");
   const [processingProgress, setProcessingProgress] = useState(0);
@@ -345,11 +453,14 @@ export const RosterManagementDemo: React.FC = () => {
     const scenarioPrompts = {
       sick_coverage: "Handle urgent sick leave coverage for today's shifts",
       holiday_planning: "Optimize roster for upcoming bank holiday period",
-      compliance_audit: "Perform comprehensive compliance audit and fix violations"
+      compliance_audit:
+        "Perform comprehensive compliance audit and fix violations",
     };
-    const prompt = scenarioPrompts[scenario as keyof typeof scenarioPrompts] || `Handle ${scenario} for the upcoming week`;
+    const prompt =
+      scenarioPrompts[scenario as keyof typeof scenarioPrompts] ||
+      `Handle ${scenario} for the upcoming week`;
     setCustomPrompt(prompt);
-    
+
     // Automatically start the demo for this scenario
     await handleStartDemo(prompt);
   };
@@ -357,7 +468,7 @@ export const RosterManagementDemo: React.FC = () => {
   // Render full roster table
   const renderFullRosterTable = () => {
     const data = rosterDemoWorkflow.getCurrentData();
-    
+
     return (
       <div
         style={{
@@ -408,28 +519,74 @@ export const RosterManagementDemo: React.FC = () => {
               }}
             >
               <div style={{ textAlign: "center" }}>
-                <Text style={{ fontSize: "24px", fontWeight: 600, color: "#0078D4", display: "block" }}>
+                <Text
+                  style={{
+                    fontSize: "24px",
+                    fontWeight: 600,
+                    color: "#0078D4",
+                    display: "block",
+                  }}
+                >
                   {data.totalDrivers}
                 </Text>
-                <Text style={{ fontSize: "14px", color: "#666" }}>Total Drivers</Text>
+                <Text style={{ fontSize: "14px", color: "#666" }}>
+                  Total Drivers
+                </Text>
               </div>
               <div style={{ textAlign: "center" }}>
-                <Text style={{ fontSize: "24px", fontWeight: 600, color: "#0078D4", display: "block" }}>
+                <Text
+                  style={{
+                    fontSize: "24px",
+                    fontWeight: 600,
+                    color: "#0078D4",
+                    display: "block",
+                  }}
+                >
                   {data.scheduledShifts}
                 </Text>
-                <Text style={{ fontSize: "14px", color: "#666" }}>Scheduled Shifts</Text>
+                <Text style={{ fontSize: "14px", color: "#666" }}>
+                  Scheduled Shifts
+                </Text>
               </div>
               <div style={{ textAlign: "center" }}>
-                <Text style={{ fontSize: "24px", fontWeight: 600, color: data.riskLevel === "High" ? "#d13438" : data.riskLevel === "Medium" ? "#f7b900" : "#107C10", display: "block" }}>
+                <Text
+                  style={{
+                    fontSize: "24px",
+                    fontWeight: 600,
+                    color:
+                      data.riskLevel === "High"
+                        ? "#d13438"
+                        : data.riskLevel === "Medium"
+                        ? "#f7b900"
+                        : "#107C10",
+                    display: "block",
+                  }}
+                >
                   {data.riskLevel}
                 </Text>
-                <Text style={{ fontSize: "14px", color: "#666" }}>Risk Level</Text>
+                <Text style={{ fontSize: "14px", color: "#666" }}>
+                  Risk Level
+                </Text>
               </div>
               <div style={{ textAlign: "center" }}>
-                <Text style={{ fontSize: "24px", fontWeight: 600, color: "#107C10", display: "block" }}>
-                  {((data.scheduledShifts - data.unstaffedShifts) / data.scheduledShifts * 100).toFixed(1)}%
+                <Text
+                  style={{
+                    fontSize: "24px",
+                    fontWeight: 600,
+                    color: "#107C10",
+                    display: "block",
+                  }}
+                >
+                  {(
+                    ((data.scheduledShifts - data.unstaffedShifts) /
+                      data.scheduledShifts) *
+                    100
+                  ).toFixed(1)}
+                  %
                 </Text>
-                <Text style={{ fontSize: "14px", color: "#666" }}>Coverage</Text>
+                <Text style={{ fontSize: "14px", color: "#666" }}>
+                  Coverage
+                </Text>
               </div>
             </div>
 
@@ -445,27 +602,99 @@ export const RosterManagementDemo: React.FC = () => {
             >
               📊 Roster Changes Applied
             </Text>
-            
+
             <div style={{ overflowX: "auto" }}>
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <thead>
-                  <tr style={{ backgroundColor: "#f8f9fa", borderBottom: "2px solid #dee2e6" }}>
-                    <th style={{ padding: "12px", textAlign: "left", fontWeight: 600, color: "#323130" }}>Driver</th>
-                    <th style={{ padding: "12px", textAlign: "left", fontWeight: 600, color: "#323130" }}>Shift Time</th>
-                    <th style={{ padding: "12px", textAlign: "left", fontWeight: 600, color: "#323130" }}>Location</th>
-                    <th style={{ padding: "12px", textAlign: "left", fontWeight: 600, color: "#323130" }}>Issue</th>
-                    <th style={{ padding: "12px", textAlign: "left", fontWeight: 600, color: "#323130" }}>Resolution</th>
-                    <th style={{ padding: "12px", textAlign: "left", fontWeight: 600, color: "#323130" }}>Status</th>
+                  <tr
+                    style={{
+                      backgroundColor: "#f8f9fa",
+                      borderBottom: "2px solid #dee2e6",
+                    }}
+                  >
+                    <th
+                      style={{
+                        padding: "12px",
+                        textAlign: "left",
+                        fontWeight: 600,
+                        color: "#323130",
+                      }}
+                    >
+                      Driver
+                    </th>
+                    <th
+                      style={{
+                        padding: "12px",
+                        textAlign: "left",
+                        fontWeight: 600,
+                        color: "#323130",
+                      }}
+                    >
+                      Shift Time
+                    </th>
+                    <th
+                      style={{
+                        padding: "12px",
+                        textAlign: "left",
+                        fontWeight: 600,
+                        color: "#323130",
+                      }}
+                    >
+                      Location
+                    </th>
+                    <th
+                      style={{
+                        padding: "12px",
+                        textAlign: "left",
+                        fontWeight: 600,
+                        color: "#323130",
+                      }}
+                    >
+                      Issue
+                    </th>
+                    <th
+                      style={{
+                        padding: "12px",
+                        textAlign: "left",
+                        fontWeight: 600,
+                        color: "#323130",
+                      }}
+                    >
+                      Resolution
+                    </th>
+                    <th
+                      style={{
+                        padding: "12px",
+                        textAlign: "left",
+                        fontWeight: 600,
+                        color: "#323130",
+                      }}
+                    >
+                      Status
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   {data.detectedIssues.map((issue: any, index: number) => (
-                    <tr key={index} style={{ borderBottom: "1px solid #dee2e6" }}>
-                      <td style={{ padding: "12px", color: "#323130" }}>{issue.driver}</td>
-                      <td style={{ padding: "12px", color: "#323130" }}>{issue.shift}</td>
-                      <td style={{ padding: "12px", color: "#323130" }}>{issue.location}</td>
-                      <td style={{ padding: "12px", color: "#666" }}>{issue.issue}</td>
-                      <td style={{ padding: "12px", color: "#323130" }}>{issue.replacement}</td>
+                    <tr
+                      key={index}
+                      style={{ borderBottom: "1px solid #dee2e6" }}
+                    >
+                      <td style={{ padding: "12px", color: "#323130" }}>
+                        {issue.driver}
+                      </td>
+                      <td style={{ padding: "12px", color: "#323130" }}>
+                        {issue.shift}
+                      </td>
+                      <td style={{ padding: "12px", color: "#323130" }}>
+                        {issue.location}
+                      </td>
+                      <td style={{ padding: "12px", color: "#666" }}>
+                        {issue.issue}
+                      </td>
+                      <td style={{ padding: "12px", color: "#323130" }}>
+                        {issue.replacement}
+                      </td>
                       <td style={{ padding: "12px" }}>
                         <Badge appearance="tint" color="success">
                           Applied
@@ -478,7 +707,14 @@ export const RosterManagementDemo: React.FC = () => {
             </div>
 
             {/* Compliance Summary */}
-            <div style={{ marginTop: "30px", padding: "20px", backgroundColor: "#f8f9fa", borderRadius: "8px" }}>
+            <div
+              style={{
+                marginTop: "30px",
+                padding: "20px",
+                backgroundColor: "#f8f9fa",
+                borderRadius: "8px",
+              }}
+            >
               <Text
                 style={{
                   fontSize: "16px",
@@ -490,9 +726,22 @@ export const RosterManagementDemo: React.FC = () => {
               >
                 🛡️ Compliance Status
               </Text>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "15px" }}>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+                  gap: "15px",
+                }}
+              >
                 <div>
-                  <Text style={{ fontSize: "14px", fontWeight: 600, color: "#323130", display: "block" }}>
+                  <Text
+                    style={{
+                      fontSize: "14px",
+                      fontWeight: 600,
+                      color: "#323130",
+                      display: "block",
+                    }}
+                  >
                     Working Time Directive
                   </Text>
                   <Text style={{ fontSize: "13px", color: "#666" }}>
@@ -500,7 +749,14 @@ export const RosterManagementDemo: React.FC = () => {
                   </Text>
                 </div>
                 <div>
-                  <Text style={{ fontSize: "14px", fontWeight: 600, color: "#323130", display: "block" }}>
+                  <Text
+                    style={{
+                      fontSize: "14px",
+                      fontWeight: 600,
+                      color: "#323130",
+                      display: "block",
+                    }}
+                  >
                     Fatigue Regulations
                   </Text>
                   <Text style={{ fontSize: "13px", color: "#666" }}>
@@ -508,7 +764,14 @@ export const RosterManagementDemo: React.FC = () => {
                   </Text>
                 </div>
                 <div>
-                  <Text style={{ fontSize: "14px", fontWeight: 600, color: "#323130", display: "block" }}>
+                  <Text
+                    style={{
+                      fontSize: "14px",
+                      fontWeight: 600,
+                      color: "#323130",
+                      display: "block",
+                    }}
+                  >
                     Rest Periods
                   </Text>
                   <Text style={{ fontSize: "13px", color: "#666" }}>
@@ -531,14 +794,25 @@ export const RosterManagementDemo: React.FC = () => {
             <Button
               size="large"
               onClick={() => {
-                const csvContent = data.detectedIssues.map((issue: any) => 
-                  `"${issue.driver}","${issue.shift}","${issue.location}","${issue.issue}","${issue.replacement}","Applied"`
-                ).join("\n");
-                const blob = new Blob([`Driver,Shift,Location,Issue,Resolution,Status\n${csvContent}`], { type: "text/csv" });
+                const csvContent = data.detectedIssues
+                  .map(
+                    (issue: any) =>
+                      `"${issue.driver}","${issue.shift}","${issue.location}","${issue.issue}","${issue.replacement}","Applied"`
+                  )
+                  .join("\n");
+                const blob = new Blob(
+                  [
+                    `Driver,Shift,Location,Issue,Resolution,Status\n${csvContent}`,
+                  ],
+                  { type: "text/csv" }
+                );
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement("a");
                 a.href = url;
-                a.download = `roster_changes_${data.fileName.replace('.xlsx', '.csv')}`;
+                a.download = `roster_changes_${data.fileName.replace(
+                  ".xlsx",
+                  ".csv"
+                )}`;
                 a.click();
               }}
             >
@@ -553,7 +827,7 @@ export const RosterManagementDemo: React.FC = () => {
   // Render message preview
   const renderMessagePreview = () => {
     const data = rosterDemoWorkflow.getCurrentData();
-    
+
     return (
       <div
         style={{
@@ -606,18 +880,62 @@ export const RosterManagementDemo: React.FC = () => {
               >
                 📊 Notification Summary
               </Text>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px" }}>
-                <div style={{ padding: "15px", backgroundColor: "#f0f6ff", borderRadius: "8px", textAlign: "center" }}>
-                  <Text style={{ fontSize: "24px", fontWeight: 600, color: "#0078D4", display: "block" }}>
-                    {data.messages.filter((m: any) => m.type === "manager").length}
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr",
+                  gap: "20px",
+                }}
+              >
+                <div
+                  style={{
+                    padding: "15px",
+                    backgroundColor: "#f0f6ff",
+                    borderRadius: "8px",
+                    textAlign: "center",
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: "24px",
+                      fontWeight: 600,
+                      color: "#0078D4",
+                      display: "block",
+                    }}
+                  >
+                    {
+                      data.messages.filter((m: any) => m.type === "manager")
+                        .length
+                    }
                   </Text>
-                  <Text style={{ fontSize: "14px", color: "#666" }}>Manager Alerts</Text>
+                  <Text style={{ fontSize: "14px", color: "#666" }}>
+                    Manager Alerts
+                  </Text>
                 </div>
-                <div style={{ padding: "15px", backgroundColor: "#f0f9ff", borderRadius: "8px", textAlign: "center" }}>
-                  <Text style={{ fontSize: "24px", fontWeight: 600, color: "#6264A7", display: "block" }}>
-                    {data.messages.filter((m: any) => m.type === "driver").length}
+                <div
+                  style={{
+                    padding: "15px",
+                    backgroundColor: "#f0f9ff",
+                    borderRadius: "8px",
+                    textAlign: "center",
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: "24px",
+                      fontWeight: 600,
+                      color: "#6264A7",
+                      display: "block",
+                    }}
+                  >
+                    {
+                      data.messages.filter((m: any) => m.type === "driver")
+                        .length
+                    }
                   </Text>
-                  <Text style={{ fontSize: "14px", color: "#666" }}>Driver Alerts</Text>
+                  <Text style={{ fontSize: "14px", color: "#666" }}>
+                    Driver Alerts
+                  </Text>
                 </div>
               </div>
             </div>
@@ -635,19 +953,34 @@ export const RosterManagementDemo: React.FC = () => {
               >
                 📋 All Messages
               </Text>
-              
-              <div style={{ display: "flex", flexDirection: "column", gap: "15px" }}>
+
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "15px",
+                }}
+              >
                 {data.messages.map((message: any, index: number) => (
                   <Card
                     key={index}
                     style={{
                       padding: "20px",
                       backgroundColor: "white",
-                      border: `2px solid ${message.type === "driver" ? "#6264A7" : "#0078D4"}`,
+                      border: `2px solid ${
+                        message.type === "driver" ? "#6264A7" : "#0078D4"
+                      }`,
                       borderRadius: "8px",
                     }}
                   >
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "10px" }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "flex-start",
+                        marginBottom: "10px",
+                      }}
+                    >
                       <div>
                         <Text
                           style={{
@@ -659,9 +992,11 @@ export const RosterManagementDemo: React.FC = () => {
                         >
                           📧 {message.recipient}
                         </Text>
-                        <Badge 
-                          appearance="tint" 
-                          color={message.type === "driver" ? "brand" : "success"}
+                        <Badge
+                          appearance="tint"
+                          color={
+                            message.type === "driver" ? "brand" : "success"
+                          }
                           style={{ marginTop: "5px" }}
                         >
                           {message.type.toUpperCase()}
@@ -676,7 +1011,7 @@ export const RosterManagementDemo: React.FC = () => {
                         </Button>
                       </div>
                     </div>
-                    
+
                     <Text
                       style={{
                         fontSize: "14px",
@@ -688,7 +1023,7 @@ export const RosterManagementDemo: React.FC = () => {
                     >
                       Subject: {message.subject}
                     </Text>
-                    
+
                     <Text
                       style={{
                         fontSize: "13px",
@@ -720,10 +1055,7 @@ export const RosterManagementDemo: React.FC = () => {
             >
               📨 Send All Notifications
             </Button>
-            <Button
-              size="large"
-              onClick={() => setShowMessagePreview(false)}
-            >
+            <Button size="large" onClick={() => setShowMessagePreview(false)}>
               ← Back to Results
             </Button>
           </div>
@@ -1298,7 +1630,13 @@ export const RosterManagementDemo: React.FC = () => {
       </div>
 
       {/* Scenario Selection */}
-      <div style={{ marginBottom: "40px", maxWidth: "1200px", margin: "0 auto 40px auto" }}>
+      <div
+        style={{
+          marginBottom: "40px",
+          maxWidth: "1200px",
+          margin: "0 auto 40px auto",
+        }}
+      >
         <Card
           style={{
             padding: "25px",
@@ -1325,9 +1663,10 @@ export const RosterManagementDemo: React.FC = () => {
               marginBottom: "20px",
             }}
           >
-            Click any scenario below to automatically start the demo, or use the custom request section for your own prompt:
+            Click any scenario below to automatically start the demo, or use the
+            custom request section for your own prompt:
           </Text>
-          
+
           <div
             style={{
               display: "grid",
@@ -1342,8 +1681,12 @@ export const RosterManagementDemo: React.FC = () => {
                 style={{
                   padding: "20px",
                   cursor: "pointer",
-                  border: selectedScenario === scenario.id ? "2px solid #0078D4" : "2px solid #e1dfdd",
-                  backgroundColor: selectedScenario === scenario.id ? "#f0f6ff" : "white",
+                  border:
+                    selectedScenario === scenario.id
+                      ? "2px solid #0078D4"
+                      : "2px solid #e1dfdd",
+                  backgroundColor:
+                    selectedScenario === scenario.id ? "#f0f6ff" : "white",
                   transition: "all 0.2s ease",
                   position: "relative",
                   overflow: "hidden",
@@ -1362,7 +1705,13 @@ export const RosterManagementDemo: React.FC = () => {
                   }
                 }}
               >
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "flex-start",
+                  }}
+                >
                   <div style={{ flex: 1 }}>
                     <Text
                       style={{
@@ -1385,20 +1734,28 @@ export const RosterManagementDemo: React.FC = () => {
                       {scenario.description}
                     </Text>
                   </div>
-                  <div style={{ 
-                    display: "flex", 
-                    alignItems: "center", 
-                    gap: "6px",
-                    padding: "6px 12px",
-                    backgroundColor: selectedScenario === scenario.id ? "#0078D4" : "#f3f2f1",
-                    borderRadius: "20px",
-                    fontSize: "12px",
-                    fontWeight: 500,
-                    color: selectedScenario === scenario.id ? "white" : "#666",
-                    transition: "all 0.2s ease"
-                  }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "6px",
+                      padding: "6px 12px",
+                      backgroundColor:
+                        selectedScenario === scenario.id
+                          ? "#0078D4"
+                          : "#f3f2f1",
+                      borderRadius: "20px",
+                      fontSize: "12px",
+                      fontWeight: 500,
+                      color:
+                        selectedScenario === scenario.id ? "white" : "#666",
+                      transition: "all 0.2s ease",
+                    }}
+                  >
                     <FlashRegular style={{ fontSize: "14px" }} />
-                    {selectedScenario === scenario.id ? "Selected" : "Click to Start"}
+                    {selectedScenario === scenario.id
+                      ? "Selected"
+                      : "Click to Start"}
                   </div>
                 </div>
               </Card>
@@ -1661,7 +2018,14 @@ export const RosterManagementDemo: React.FC = () => {
                 >
                   � Quick Demos
                 </Text>
-                <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginBottom: "15px" }}>
+                <div
+                  style={{
+                    display: "flex",
+                    gap: "8px",
+                    flexWrap: "wrap",
+                    marginBottom: "15px",
+                  }}
+                >
                   {scenarios.map((scenario) => (
                     <Button
                       key={scenario.id}
@@ -1680,7 +2044,9 @@ export const RosterManagementDemo: React.FC = () => {
                         minHeight: "32px",
                       }}
                     >
-                      <FlashRegular style={{ marginRight: "4px", fontSize: "12px" }} />
+                      <FlashRegular
+                        style={{ marginRight: "4px", fontSize: "12px" }}
+                      />
                       {scenario.name}
                     </Button>
                   ))}

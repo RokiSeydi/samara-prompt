@@ -348,7 +348,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
                 display: "block",
               }}
             >
-              Or try our demos without signing in:
+              Or explore our interactive demos (no sign-in required):
             </Text>
             <div
               style={{
@@ -358,6 +358,23 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
                 justifyContent: "center",
               }}
             >
+              <Button
+                appearance="outline"
+                onClick={() =>
+                  (window.location.href = "/?demo=investor-roster")
+                }
+                style={{
+                  background: "rgba(139, 92, 246, 0.2)",
+                  border: "2px solid rgba(139, 92, 246, 0.5)",
+                  color: "rgba(255, 255, 255, 1)",
+                  fontSize: "14px",
+                  padding: "10px 20px",
+                  fontWeight: 600,
+                  boxShadow: "0 4px 16px rgba(139, 92, 246, 0.3)",
+                }}
+              >
+                💼 Investor Demo
+              </Button>
               <Button
                 appearance="outline"
                 onClick={() =>

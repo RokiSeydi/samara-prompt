@@ -8,6 +8,7 @@ import { TransportationDemo } from "./TransportationDemo";
 import { RosterManagementDemo } from "./RosterManagementDemo";
 import SmartRosterDemo from "./SmartRosterDemo";
 import { RealExcelOptimizer } from "./RealExcelOptimizer";
+import { InvestorRosterDemo } from "./InvestorRosterDemo";
 
 export const SimplifiedApp: React.FC = () => {
   const isAuthenticated = useIsAuthenticated();
@@ -18,14 +19,23 @@ export const SimplifiedApp: React.FC = () => {
   // Check URL parameters for demo mode
   const urlParams = new URLSearchParams(window.location.search);
   const demoMode = urlParams.get("demo");
-  
-  console.log('🔍 SimplifiedApp - Current URL:', window.location.href);
-  console.log('🔍 SimplifiedApp - Demo mode:', demoMode);
-  console.log('🔍 SimplifiedApp - URL params:', Object.fromEntries(urlParams.entries()));
+
+  console.log("🔍 SimplifiedApp - Current URL:", window.location.href);
+  console.log("🔍 SimplifiedApp - Demo mode:", demoMode);
+  console.log(
+    "🔍 SimplifiedApp - URL params:",
+    Object.fromEntries(urlParams.entries())
+  );
 
   // If demo mode, skip authentication flow and go straight to demo
   useEffect(() => {
-    if (demoMode === "transportation" || demoMode === "roster" || demoMode === "smart-roster" || demoMode === "excel-optimizer") {
+    if (
+      demoMode === "transportation" ||
+      demoMode === "roster" ||
+      demoMode === "smart-roster" ||
+      demoMode === "excel-optimizer" ||
+      demoMode === "investor-roster"
+    ) {
       setShowWelcome(false);
       setShowTransition(false);
       setIsReady(true);
@@ -181,6 +191,18 @@ export const SimplifiedApp: React.FC = () => {
           transition={{ duration: 0.5 }}
         >
           <RealExcelOptimizer />
+        </motion.div>
+      )}
+
+      {demoMode === "investor-roster" && (
+        <motion.div
+          key="investor-roster"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <InvestorRosterDemo />
         </motion.div>
       )}
 

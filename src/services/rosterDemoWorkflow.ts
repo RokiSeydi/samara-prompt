@@ -39,7 +39,7 @@ interface RosterDemoResult {
 
 // Multiple demo scenarios for different roster situations
 const DEMO_SCENARIOS = {
-  "sick_coverage": {
+  sick_coverage: {
     name: "Sick Leave Coverage",
     description: "Handle last-minute sick calls and find coverage",
     fileName: "sample_driver_roster.xlsx",
@@ -101,30 +101,34 @@ const DEMO_SCENARIOS = {
       {
         recipient: "All Depot Managers",
         subject: "Urgent: Roster Updates - Multiple Shift Changes",
-        content: "Critical staffing updates for today's operations. 3 shifts require immediate attention. All compliance requirements verified.",
+        content:
+          "Critical staffing updates for today's operations. 3 shifts require immediate attention. All compliance requirements verified.",
         type: "manager",
       },
       {
         recipient: "Driver C112",
         subject: "Shift Update - Sick Leave Approved",
-        content: "Your sick leave has been approved. Driver B089 will cover your shift. Rest well.",
+        content:
+          "Your sick leave has been approved. Driver B089 will cover your shift. Rest well.",
         type: "driver",
       },
       {
         recipient: "Southend Depot Manager",
         subject: "Urgent: Driver Coverage Update - Morning Shift",
-        content: "Driver C112 called in sick. Driver B089 assigned to cover 06:00-14:00 shift. Fatigue compliance verified.",
+        content:
+          "Driver C112 called in sick. Driver B089 assigned to cover 06:00-14:00 shift. Fatigue compliance verified.",
         type: "manager",
       },
       {
         recipient: "Drivers D045 & F123",
         subject: "Overtime Opportunity - Evening Peak Service",
-        content: "Overtime approved for 14:00-22:00 shift at Wickford Station. Working Time Directive compliance confirmed.",
+        content:
+          "Overtime approved for 14:00-22:00 shift at Wickford Station. Working Time Directive compliance confirmed.",
         type: "driver",
       },
     ],
   },
-  "holiday_planning": {
+  holiday_planning: {
     name: "Holiday Period Optimization",
     description: "Optimize staffing for bank holidays and peak travel periods",
     fileName: "sample_driver_roster.xlsx",
@@ -177,26 +181,30 @@ const DEMO_SCENARIOS = {
       {
         recipient: "All Depot Managers",
         subject: "Bank Holiday Operations - Enhanced Service Plan Active",
-        content: "Holiday service plan activated. 15 additional drivers deployed. Command center operational from 05:00.",
+        content:
+          "Holiday service plan activated. 15 additional drivers deployed. Command center operational from 05:00.",
         type: "manager",
       },
       {
         recipient: "All Standby Drivers",
         subject: "Bank Holiday Activation - Report for Duty",
-        content: "You've been selected for bank holiday service. Holiday pay rates apply. Report to assigned depot 30 mins early.",
+        content:
+          "You've been selected for bank holiday service. Holiday pay rates apply. Report to assigned depot 30 mins early.",
         type: "driver",
       },
       {
         recipient: "Route Controllers",
         subject: "Service Frequency Increase - Routes 12, 45, 67",
-        content: "Increase service frequency by 25% on designated routes. Extra vehicles positioned and crews assigned.",
+        content:
+          "Increase service frequency by 25% on designated routes. Extra vehicles positioned and crews assigned.",
         type: "manager",
       },
     ],
   },
-  "compliance_audit": {
+  compliance_audit: {
     name: "Compliance Review",
-    description: "Comprehensive audit of working time regulations and fatigue management",
+    description:
+      "Comprehensive audit of working time regulations and fatigue management",
     fileName: "sample_driver_roster.xlsx",
     totalDrivers: 45,
     scheduledShifts: 156,
@@ -256,20 +264,24 @@ const DEMO_SCENARIOS = {
     messages: [
       {
         recipient: "Safety Officer",
-        subject: "URGENT: Compliance Violations Detected - Immediate Action Required",
-        content: "Critical compliance issues identified. 2 drivers must be removed from shifts immediately. Full report attached.",
+        subject:
+          "URGENT: Compliance Violations Detected - Immediate Action Required",
+        content:
+          "Critical compliance issues identified. 2 drivers must be removed from shifts immediately. Full report attached.",
         type: "manager",
       },
       {
         recipient: "Driver L198",
         subject: "Mandatory Rest Period - Thursday Shift Cancelled",
-        content: "For your safety and compliance, Thursday night shift has been cancelled. You must take 24h rest before next duty.",
+        content:
+          "For your safety and compliance, Thursday night shift has been cancelled. You must take 24h rest before next duty.",
         type: "driver",
       },
       {
         recipient: "HR Department",
         subject: "Temporary Staff Request - Maintenance Team Support",
-        content: "Require temporary maintenance contractor for weekend work. Current team exceeding safe working limits.",
+        content:
+          "Require temporary maintenance contractor for weekend work. Current team exceeding safe working limits.",
         type: "manager",
       },
     ],
@@ -295,10 +307,11 @@ export class RosterDemoWorkflow {
   }
 
   getScenarios() {
-    return Object.keys(DEMO_SCENARIOS).map(key => ({
+    return Object.keys(DEMO_SCENARIOS).map((key) => ({
       id: key,
       name: DEMO_SCENARIOS[key as keyof typeof DEMO_SCENARIOS].name,
-      description: DEMO_SCENARIOS[key as keyof typeof DEMO_SCENARIOS].description,
+      description:
+        DEMO_SCENARIOS[key as keyof typeof DEMO_SCENARIOS].description,
     }));
   }
 
@@ -320,7 +333,7 @@ export class RosterDemoWorkflow {
 
   async processRosterWorkflow(prompt: string): Promise<RosterDemoResult> {
     const data = this.getCurrentData();
-    
+
     const result: RosterDemoResult = {
       id: `roster_demo_${Date.now()}`,
       prompt,
@@ -407,10 +420,15 @@ export class RosterDemoWorkflow {
           step.result = `Generated ${data.suggestedActions.length} optimized assignments`;
           break;
         case "create_outputs":
-          step.result = "Created updated roster Excel file and compliance report";
+          step.result =
+            "Created updated roster Excel file and compliance report";
           break;
         case "send_notifications":
-          step.result = `Prepared Teams messages for ${data.messages.filter((m: any) => m.type === 'manager').length} managers and ${data.messages.filter((m: any) => m.type === 'driver').length} drivers`;
+          step.result = `Prepared Teams messages for ${
+            data.messages.filter((m: any) => m.type === "manager").length
+          } managers and ${
+            data.messages.filter((m: any) => m.type === "driver").length
+          } drivers`;
           break;
       }
 
@@ -433,7 +451,7 @@ export class RosterDemoWorkflow {
 
   private generateDemoResults(): WorkflowResultItem[] {
     const data = this.getCurrentData();
-    
+
     return [
       {
         type: "file",
@@ -454,9 +472,13 @@ export class RosterDemoWorkflow {
           summary: {
             totalDrivers: data.totalDrivers,
             totalShifts: data.scheduledShifts,
-            coverage: `${((data.scheduledShifts - data.unstaffedShifts) / data.scheduledShifts * 100).toFixed(1)}%`,
+            coverage: `${(
+              ((data.scheduledShifts - data.unstaffedShifts) /
+                data.scheduledShifts) *
+              100
+            ).toFixed(1)}%`,
             riskLevel: data.riskLevel,
-          }
+          },
         },
         quickActions: [
           {
@@ -490,12 +512,12 @@ export class RosterDemoWorkflow {
             level: data.riskLevel,
             factors: [
               "Driver fatigue monitoring",
-              "Rest period compliance", 
+              "Rest period compliance",
               "Weekly hour limits",
-              "Emergency coverage capacity"
+              "Emergency coverage capacity",
             ],
             mitigationStatus: data.complianceSummary.riskMitigation,
-          }
+          },
         },
         quickActions: [
           {
@@ -529,7 +551,8 @@ export class RosterDemoWorkflow {
           {
             label: "Send All Alerts",
             iconName: "MailRegular",
-            action: () => console.log("Send automatic driver and manager alerts"),
+            action: () =>
+              console.log("Send automatic driver and manager alerts"),
           },
           {
             label: "Customize Messages",
@@ -561,7 +584,7 @@ export class RosterDemoWorkflow {
           },
           {
             label: "Schedule Review",
-            iconName: "CalendarRegular", 
+            iconName: "CalendarRegular",
             action: () => console.log("Schedule performance review"),
           },
         ],
@@ -571,7 +594,7 @@ export class RosterDemoWorkflow {
 
   private getRecommendations(): string[] {
     const scenario = this.currentScenario;
-    
+
     switch (scenario) {
       case "sick_coverage":
         return [
