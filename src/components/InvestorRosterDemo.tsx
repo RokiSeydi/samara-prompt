@@ -132,6 +132,11 @@ const logoStyles = `
     opacity: 0.8;
   }
 }
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
 `;
 
 // Inject styles
@@ -173,6 +178,7 @@ export const InvestorRosterDemo: React.FC = () => {
   const [expandedStep, setExpandedStep] = useState<string | null>(null);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [processingTime, setProcessingTime] = useState(0);
+  const [isAutoFixing, setIsAutoFixing] = useState(false);
 
   const workflowSteps: WorkflowStep[] = [
     {
@@ -334,6 +340,49 @@ export const InvestorRosterDemo: React.FC = () => {
     });
 
     setExpandedStep(null);
+  };
+
+  const handleAutoFix = () => {
+    setIsAutoFixing(true);
+
+    // Simulate auto-fix process
+    setTimeout(() => {
+      // Update compliance step to remove issues
+      setSteps((prevSteps) => {
+        const newSteps = [...prevSteps];
+        const complianceStepIndex = newSteps.findIndex(
+          (s) => s.id === "compliance-check"
+        );
+
+        if (complianceStepIndex !== -1) {
+          newSteps[complianceStepIndex].samaraAnalysis = {
+            summary: "All compliance issues automatically resolved",
+          };
+          newSteps[complianceStepIndex].status = "completed";
+          newSteps[complianceStepIndex].duration = 4;
+        }
+
+        return newSteps;
+      });
+
+      setIsAutoFixing(false);
+
+      // Auto-approve compliance and move to optimization
+      setTimeout(() => {
+        setSteps((prevSteps) => {
+          const newSteps = [...prevSteps];
+          const optimizationStepIndex = newSteps.findIndex(
+            (s) => s.id === "optimization"
+          );
+
+          if (optimizationStepIndex !== -1) {
+            newSteps[optimizationStepIndex].status = "waiting_approval";
+          }
+
+          return newSteps;
+        });
+      }, 500);
+    }, 3000); // 3 second auto-fix simulation
   };
 
   const getAppColor = (app: string) => {
@@ -1035,51 +1084,48 @@ export const InvestorRosterDemo: React.FC = () => {
               </Body1>
             </motion.div>
 
-            <Card
+            <div
               style={{
-                // ...glassMorphismStyle,
-                // padding: "30px",
                 width: "100%",
                 maxWidth: "800px",
+                display: "flex",
+                flexDirection: "column",
+                gap: "20px",
               }}
             >
+              {/* Input field with integrated Execute button */}
               <div
-                style={{ display: "flex", alignItems: "center", gap: "15px" }}
+                style={{
+                  position: "relative",
+                  width: "100%",
+                }}
               >
-                {/* <Avatar
-                  name="SAMARA AI"
+                <textarea
+                  value={prompt}
+                  onChange={(e) => setPrompt(e.target.value)}
+                  placeholder="Ask for files, create documents, or run workflows...?"
                   style={{
-                    background:
-                      "linear-gradient(135deg, #8b5cf6 0%, #a855f7 100%)",
+                    width: "100%",
+                    minHeight: "60px",
+                    border: "none",
+                    background: "rgba(255, 255, 255, 0.5)",
+                    borderRadius: "12px",
+                    padding: "15px 120px 15px 15px", // Extra padding on right for button
+                    fontSize: "16px",
+                    fontFamily: "Segoe UI, system-ui, sans-serif",
+                    resize: "none",
+                    outline: "none",
+                    boxSizing: "border-box",
                   }}
-                /> */}
-                <div style={{ flex: 1 }}>
-                  <textarea
-                    value={prompt}
-                    onChange={(e) => setPrompt(e.target.value)}
-                    placeholder="How can I help you today?"
-                    style={{
-                      width: "100%",
-                      minHeight: "60px",
-                      border: "none",
-                      background: "rgba(255, 255, 255, 0.5)",
-                      borderRadius: "12px",
-                      padding: "15px",
-                      fontSize: "16px",
-                      fontFamily: "Segoe UI, system-ui, sans-serif",
-                      resize: "none",
-                      outline: "none",
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" && !e.shiftKey) {
-                        e.preventDefault();
-                        if (prompt.trim()) {
-                          setCurrentState("thinking");
-                        }
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      if (prompt.trim()) {
+                        setCurrentState("thinking");
                       }
-                    }}
-                  />
-                </div>
+                    }
+                  }}
+                />
                 <Button
                   appearance="primary"
                   onClick={() => {
@@ -1089,37 +1135,106 @@ export const InvestorRosterDemo: React.FC = () => {
                   }}
                   disabled={!prompt.trim()}
                   style={{
-                    background: "rgba(255, 255, 255, 0.2)",
-                    backdropFilter: "blur(10px)",
-                    border: "1px solid rgba(255, 255, 255, 0.3)",
-                    borderRadius: "50%",
-                    width: "50px",
-                    height: "50px",
-                    minWidth: "50px",
-                    boxShadow: "0 4px 20px 0 rgba(31, 38, 135, 0.2)",
+                    position: "absolute",
+                    right: "8px",
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    background:
+                      "linear-gradient(135deg, #8b5cf6 0%, #a855f7 100%)",
+                    border: "none",
+                    borderRadius: "8px",
+                    padding: "12px 24px",
+                    fontSize: "14px",
+                    fontWeight: 600,
+                    color: "white",
+                    boxShadow: "0 4px 20px rgba(139, 92, 246, 0.4)",
                     transition: "all 0.2s ease",
-                    // color: "white",
+                    minWidth: "100px",
+                    height: "44px",
                   }}
                   onMouseEnter={(e) => {
                     if (!prompt.trim()) return;
-                    e.currentTarget.style.background =
-                      "rgba(255, 255, 255, 0.25)";
-                    e.currentTarget.style.transform = "scale(1.05)";
+                    e.currentTarget.style.transform =
+                      "translateY(-50%) translateY(-2px)";
                     e.currentTarget.style.boxShadow =
-                      "0 6px 24px 0 rgba(31, 38, 135, 0.3)";
+                      "0 6px 28px rgba(139, 92, 246, 0.5)";
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.background =
-                      "rgba(255, 255, 255, 0.2)";
-                    e.currentTarget.style.transform = "scale(1)";
+                    e.currentTarget.style.transform = "translateY(-50%)";
                     e.currentTarget.style.boxShadow =
-                      "0 4px 20px 0 rgba(31, 38, 135, 0.2)";
+                      "0 4px 20px rgba(139, 92, 246, 0.4)";
                   }}
                 >
-                  <ArrowRightRegular style={{ fontSize: "20px" }} />
+                  Execute
                 </Button>
               </div>
-            </Card>
+
+              {/* Example prompts section */}
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5 }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    flexWrap: "wrap",
+                    gap: "8px",
+                    justifyContent: "center",
+                  }}
+                >
+                  {[
+                    "List my latest Word documents",
+                    "Show me Excel files from this month",
+                    "Optimize the transportation roster for next week",
+                    "Create a compliance report for Q3",
+                  ].map((example, index) => (
+                    <motion.div
+                      key={example}
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: 0.6 + index * 0.1 }}
+                    >
+                      <button
+                        onClick={() => setPrompt(example)}
+                        style={{
+                          background: "rgba(255, 255, 255, 0.1)",
+                          backdropFilter: "blur(10px)",
+                          border: "1px solid rgba(255, 255, 255, 0.2)",
+                          borderRadius: "20px",
+                          padding: "8px 16px",
+                          fontSize: "12px",
+                          color: "rgba(255, 255, 255, 0.9)",
+                          cursor: "pointer",
+                          transition: "all 0.2s ease",
+                          fontFamily: "Segoe UI, system-ui, sans-serif",
+                          outline: "none",
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.background =
+                            "rgba(255, 255, 255, 0.2)";
+                          e.currentTarget.style.borderColor =
+                            "rgba(255, 255, 255, 0.4)";
+                          e.currentTarget.style.transform = "translateY(-1px)";
+                          e.currentTarget.style.boxShadow =
+                            "0 4px 12px rgba(0,0,0,0.1)";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.background =
+                            "rgba(255, 255, 255, 0.1)";
+                          e.currentTarget.style.borderColor =
+                            "rgba(255, 255, 255, 0.2)";
+                          e.currentTarget.style.transform = "translateY(0)";
+                          e.currentTarget.style.boxShadow = "none";
+                        }}
+                      >
+                        {example}
+                      </button>
+                    </motion.div>
+                  ))}
+                </div>
+              </motion.div>
+            </div>
           </motion.div>
         )}
 
@@ -1409,14 +1524,22 @@ export const InvestorRosterDemo: React.FC = () => {
                           ? "2px solid rgba(5, 150, 105, 0.8)"
                           : step.status === "waiting_approval"
                           ? "2px solid rgba(251, 191, 36, 0.6)"
+                          : step.id === "optimization" && isAutoFixing
+                          ? "2px solid rgba(139, 92, 246, 0.6)"
                           : "1px solid rgba(255, 255, 255, 0.2)",
                       boxShadow:
                         step.status === "completed"
                           ? "0 0 30px rgba(5, 150, 105, 0.3), 0 8px 32px rgba(0,0,0,0.12)"
                           : step.status === "waiting_approval"
                           ? "0 0 20px rgba(251, 191, 36, 0.2), 0 8px 32px rgba(0,0,0,0.12)"
+                          : step.id === "optimization" && isAutoFixing
+                          ? "0 0 20px rgba(139, 92, 246, 0.3), 0 8px 32px rgba(0,0,0,0.12)"
                           : "0 8px 32px rgba(0,0,0,0.12)",
-                      opacity: step.status === "pending" ? 0.6 : 1,
+                      opacity:
+                        step.status === "pending" &&
+                        !(step.id === "optimization" && isAutoFixing)
+                          ? 0.6
+                          : 1,
                       position: "relative",
                       overflow: "hidden",
                     }}
@@ -1432,17 +1555,40 @@ export const InvestorRosterDemo: React.FC = () => {
                         gap: "8px",
                       }}
                     >
-                      {step.status === "pending" && (
+                      {step.id === "optimization" && isAutoFixing ? (
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "8px",
+                          }}
+                        >
+                          <div
+                            style={{
+                              width: "16px",
+                              height: "16px",
+                              border: "2px solid transparent",
+                              borderTop: "2px solid #8b5cf6",
+                              borderRadius: "50%",
+                              animation: "spin 1s linear infinite",
+                            }}
+                          />
+                          <Badge
+                            appearance="filled"
+                            style={{ background: "#8b5cf6", color: "white" }}
+                          >
+                            Re-optimizing...
+                          </Badge>
+                        </div>
+                      ) : step.status === "pending" ? (
                         <Badge color="subtle" style={{ opacity: 0.6 }}>
                           Waiting
                         </Badge>
-                      )}
-                      {step.status === "waiting_approval" && (
+                      ) : step.status === "waiting_approval" ? (
                         <Badge appearance="filled" color="warning">
                           Review Required
                         </Badge>
-                      )}
-                      {step.status === "completed" && (
+                      ) : step.status === "completed" ? (
                         <div
                           style={{
                             display: "flex",
@@ -1457,7 +1603,7 @@ export const InvestorRosterDemo: React.FC = () => {
                             Complete ({step.duration}s)
                           </Badge>
                         </div>
-                      )}
+                      ) : null}
                     </div>
 
                     {/* App icon and title */}
@@ -1495,7 +1641,9 @@ export const InvestorRosterDemo: React.FC = () => {
 
                     {/* Action description */}
                     <Body2 style={{ marginBottom: "16px", lineHeight: 1.4 }}>
-                      {step.action}
+                      {step.id === "optimization" && isAutoFixing
+                        ? "Re-optimizing roster with compliance fixes..."
+                        : step.action}
                     </Body2>
 
                     {/* File info */}
@@ -1626,8 +1774,144 @@ export const InvestorRosterDemo: React.FC = () => {
                         >
                           {step.samaraAnalysis.summary}
                         </Caption1>
+
+                        {/* Compliance audit notification for optimization card after auto-fix */}
+                        {step.id === "optimization" &&
+                          steps.find((s) => s.id === "compliance-check")
+                            ?.status === "completed" && (
+                            <div
+                              style={{
+                                background: "rgba(59, 130, 246, 0.1)",
+                                border: "1px solid rgba(59, 130, 246, 0.3)",
+                                borderRadius: "4px",
+                                padding: "8px",
+                                marginTop: "8px",
+                                fontSize: "11px",
+                                lineHeight: 1.3,
+                              }}
+                            >
+                              <div
+                                style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: "4px",
+                                  marginBottom: "4px",
+                                }}
+                              >
+                                <div style={{ fontSize: "12px" }}>ℹ️</div>
+                                <span
+                                  style={{
+                                    fontWeight: 600,
+                                    color: "rgb(30, 64, 175)",
+                                  }}
+                                >
+                                  Compliance Update
+                                </span>
+                              </div>
+                              <div style={{ opacity: 0.9 }}>
+                                Roster optimized based on resolved compliance
+                                issues. All compliance rectifications have been
+                                logged for audit trail and regulatory review.
+                              </div>
+                            </div>
+                          )}
                       </div>
                     )}
+
+                    {/* Teams notification preview */}
+                    {step.id === "notification-prep" &&
+                      step.status !== "pending" && (
+                        <div
+                          style={{
+                            background: "rgba(98, 100, 167, 0.1)",
+                            backdropFilter: "blur(10px)",
+                            borderRadius: "6px",
+                            padding: "12px",
+                            marginBottom: "16px",
+                            border: "1px solid rgba(98, 100, 167, 0.3)",
+                            boxShadow: "0 4px 12px rgba(98, 100, 167, 0.1)",
+                          }}
+                        >
+                          <div
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "8px",
+                              marginBottom: "8px",
+                            }}
+                          >
+                            <div
+                              style={{
+                                width: "20px",
+                                height: "20px",
+                                borderRadius: "4px",
+                                background: "#6264a7",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                fontSize: "10px",
+                                fontWeight: "bold",
+                                color: "white",
+                              }}
+                            >
+                              T
+                            </div>
+                            <Caption1
+                              style={{
+                                fontWeight: 600,
+                                color: "rgb(98, 100, 167)",
+                              }}
+                            >
+                              Message Preview
+                            </Caption1>
+                          </div>
+
+                          <div
+                            style={{
+                              background: "rgba(255, 255, 255, 0.4)",
+                              backdropFilter: "blur(8px)",
+                              borderRadius: "6px",
+                              padding: "10px",
+                              marginBottom: "8px",
+                              fontSize: "11px",
+                              border: "1px solid rgba(255, 255, 255, 0.3)",
+                              boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+                            }}
+                          >
+                            <div
+                              style={{
+                                fontWeight: 600,
+                                marginBottom: "4px",
+                                color: "rgb(49, 46, 129)",
+                              }}
+                            >
+                              📅 Roster Update - Sarah Johnson
+                            </div>
+                            <div style={{ lineHeight: 1.4, opacity: 0.9 }}>
+                              Hi Sarah, your schedule has been updated for next
+                              week.
+                              <strong>
+                                {" "}
+                                Early shift: Monday 06:30-14:30
+                              </strong>{" "}
+                              (previously 07:00-15:00). Route remains Central
+                              depot. Please confirm receipt. Contact management
+                              for any concerns. Thanks, Roster Team.
+                            </div>
+                          </div>
+
+                          <Caption1
+                            style={{
+                              fontSize: "10px",
+                              opacity: 0.7,
+                              fontStyle: "italic",
+                            }}
+                          >
+                            Sample message (8 personalized notifications ready
+                            to send)
+                          </Caption1>
+                        </div>
+                      )}
 
                     {/* Interactive action buttons */}
                     <div
@@ -1785,6 +2069,25 @@ export const InvestorRosterDemo: React.FC = () => {
                                   }}
                                 />
                                 Open in Teams
+                              </Button>
+                              <Button
+                                size="small"
+                                appearance="secondary"
+                                style={{
+                                  background: "rgba(255, 255, 255, 0.6)",
+                                  backdropFilter: "blur(10px)",
+                                  border: "1px solid rgba(255, 255, 255, 0.4)",
+                                  borderRadius: "4px",
+                                  boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                                }}
+                              >
+                                <WindowRegular
+                                  style={{
+                                    fontSize: "14px",
+                                    marginRight: "6px",
+                                  }}
+                                />
+                                Open in Outlook
                               </Button>
                             </>
                           )}
@@ -1944,6 +2247,73 @@ export const InvestorRosterDemo: React.FC = () => {
                             </>
                           )}
 
+                          {step.app === "Teams" && (
+                            <>
+                              <Button
+                                size="small"
+                                appearance="secondary"
+                                onClick={() =>
+                                  setExpandedStep(
+                                    expandedStep === step.id ? null : step.id
+                                  )
+                                }
+                                style={{
+                                  background: "rgba(255, 255, 255, 0.6)",
+                                  backdropFilter: "blur(10px)",
+                                  border: "1px solid rgba(255, 255, 255, 0.4)",
+                                  borderRadius: "4px",
+                                  boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                                }}
+                              >
+                                <PersonRegular
+                                  style={{
+                                    fontSize: "14px",
+                                    marginRight: "6px",
+                                  }}
+                                />
+                                Show Draft Messages
+                              </Button>
+                              <Button
+                                size="small"
+                                appearance="secondary"
+                                style={{
+                                  background: "rgba(255, 255, 255, 0.6)",
+                                  backdropFilter: "blur(10px)",
+                                  border: "1px solid rgba(255, 255, 255, 0.4)",
+                                  borderRadius: "4px",
+                                  boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                                }}
+                              >
+                                <WindowRegular
+                                  style={{
+                                    fontSize: "14px",
+                                    marginRight: "6px",
+                                  }}
+                                />
+                                Open in Teams
+                              </Button>
+                              <Button
+                                size="small"
+                                appearance="secondary"
+                                style={{
+                                  background: "rgba(255, 255, 255, 0.6)",
+                                  backdropFilter: "blur(10px)",
+                                  border: "1px solid rgba(255, 255, 255, 0.4)",
+                                  borderRadius: "4px",
+                                  boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                                }}
+                              >
+                                <WindowRegular
+                                  style={{
+                                    fontSize: "14px",
+                                    marginRight: "6px",
+                                  }}
+                                />
+                                Open in Outlook
+                              </Button>
+                            </>
+                          )}
+
                           {/* Compliance-specific rectification options */}
                           {step.id === "compliance-check" &&
                             step.samaraAnalysis?.issues &&
@@ -1951,23 +2321,47 @@ export const InvestorRosterDemo: React.FC = () => {
                               <Button
                                 size="small"
                                 appearance="secondary"
+                                onClick={handleAutoFix}
+                                disabled={isAutoFixing}
                                 style={{
-                                  background: "rgba(251, 191, 36, 0.2)",
+                                  background: isAutoFixing
+                                    ? "rgba(251, 191, 36, 0.1)"
+                                    : "rgba(251, 191, 36, 0.2)",
                                   backdropFilter: "blur(10px)",
                                   border: "1px solid rgba(251, 191, 36, 0.4)",
                                   borderRadius: "4px",
                                   boxShadow:
                                     "0 4px 12px rgba(251, 191, 36, 0.1)",
                                   color: "rgb(146, 64, 14)",
+                                  opacity: isAutoFixing ? 0.6 : 1,
                                 }}
                               >
-                                <ArrowRightRegular
-                                  style={{
-                                    fontSize: "14px",
-                                    marginRight: "6px",
-                                  }}
-                                />
-                                Auto-Fix Issue
+                                {isAutoFixing ? (
+                                  <>
+                                    <div
+                                      style={{
+                                        width: "14px",
+                                        height: "14px",
+                                        border: "2px solid transparent",
+                                        borderTop: "2px solid rgb(146, 64, 14)",
+                                        borderRadius: "50%",
+                                        animation: "spin 1s linear infinite",
+                                        marginRight: "6px",
+                                      }}
+                                    />
+                                    Fixing...
+                                  </>
+                                ) : (
+                                  <>
+                                    <ArrowRightRegular
+                                      style={{
+                                        fontSize: "14px",
+                                        marginRight: "6px",
+                                      }}
+                                    />
+                                    Auto-Fix Issue
+                                  </>
+                                )}
                               </Button>
                             )}
 
@@ -2197,7 +2591,7 @@ export const InvestorRosterDemo: React.FC = () => {
             </div>
 
             {/* Summary section */}
-            <motion.div
+            {/* <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.6 }}
@@ -2305,7 +2699,7 @@ export const InvestorRosterDemo: React.FC = () => {
                   </div>
                 </div>
               </Card>
-            </motion.div>
+            </motion.div> */}
           </motion.div>
         )}
 
@@ -2399,6 +2793,7 @@ export const InvestorRosterDemo: React.FC = () => {
                 >
                   Roster Generated Successfully!
                 </Title1>
+                <br />
                 <Body1
                   style={{
                     color: "rgba(255, 255, 255, 0.8)",
