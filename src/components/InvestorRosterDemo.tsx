@@ -483,7 +483,7 @@ export const InvestorRosterDemo: React.FC = () => {
         background:
           currentState === "login" || currentState === "loading"
             ? "#f5f5f5"
-            : "linear-gradient(135deg, rgb(26, 53, 169) 0%, rgb(52 30 74) 100%)",
+            : "linear-gradient(135deg, rgb(10 24 85) 0%, rgb(52, 30, 74) 100%)",
         padding:
           currentState === "login" || currentState === "loading" ? "0" : "20px",
         fontFamily: "Segoe UI, system-ui, sans-serif",
@@ -1481,17 +1481,9 @@ export const InvestorRosterDemo: React.FC = () => {
                     textShadow: "0 2px 4px rgba(0,0,0,0.3)",
                   }}
                 >
-                  Workflow Pipeline
+                  for Rostering
                 </Title3>
               </div>
-              <Body1
-                style={{
-                  color: "rgba(255, 255, 255, 0.8)",
-                  display: "block",
-                }}
-              >
-                End-to-end roster generation with compliance validation
-              </Body1>
             </motion.div>
 
             {/* Interactive Workflow Cards Grid */}
