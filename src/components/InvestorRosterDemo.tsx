@@ -2714,176 +2714,168 @@ export const InvestorRosterDemo: React.FC = () => {
               flexDirection: "column",
               alignItems: "center",
               justifyContent: "center",
-              height: "100vh",
-              gap: "30px",
+              minHeight: "100vh",
+              gap: "20px",
+              padding: "20px 16px",
+              textAlign: "center",
+              maxWidth: "700px",
+              width: "100%",
+              margin: "0 auto",
+              boxSizing: "border-box",
+              overflowY: "auto",
             }}
           >
-            <Card
+            {/* Success Icon with Animation */}
+            <motion.div
+              initial={{ scale: 0, rotate: -180 }}
+              animate={{ scale: 1, rotate: 0 }}
+              transition={{
+                type: "spring",
+                delay: 0.2,
+                duration: 0.8,
+                stiffness: 200,
+              }}
+              style={{ marginBottom: "16px" }}
+            >
+              <div
+                style={{
+                  width: "64px",
+                  height: "64px",
+                  borderRadius: "50%",
+                  background:
+                    "linear-gradient(135deg, #059669 0%, #047857 100%)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  margin: "0 auto",
+                  boxShadow:
+                    "0 8px 32px rgba(5, 150, 105, 0.3), 0 0 40px rgba(5, 150, 105, 0.2)",
+                  position: "relative",
+                }}
+              >
+                <CheckmarkCircleRegular
+                  style={{
+                    fontSize: "32px",
+                    color: "white",
+                  }}
+                />
+                {/* Glow effect */}
+                <div
+                  style={{
+                    position: "absolute",
+                    width: "100%",
+                    height: "100%",
+                    borderRadius: "50%",
+                    background:
+                      "linear-gradient(135deg, rgba(5, 150, 105, 0.4) 0%, rgba(4, 120, 87, 0.4) 100%)",
+                    animation: "pulse 2s ease-in-out infinite",
+                  }}
+                />
+              </div>
+            </motion.div>
+
+            {/* Title with SAMARA branding */}
+            <div style={{ marginBottom: "20px" }}>
+              <Title1
+                style={{
+                  background:
+                    "linear-gradient(135deg, #059669 0%, #047857 100%)",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  backgroundClip: "text",
+                  fontSize: "28px",
+                  fontWeight: 700,
+                  marginBottom: "8px",
+                  letterSpacing: "-0.5px",
+                }}
+              >
+                Roster Generated Successfully!
+              </Title1>
+              <br />
+              <Body1
+                style={{
+                  color: "rgba(255, 255, 255, 0.8)",
+                  fontSize: "16px",
+                  fontWeight: 400,
+                }}
+              >
+                SAMARA has optimized your transportation roster with full
+                compliance
+              </Body1>
+            </div>
+
+            {/* Elegant stats cards */}
+            <div
               style={{
-                ...glassMorphismStyle,
-                padding: "48px",
-                textAlign: "center",
-                maxWidth: "700px",
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))",
+                gap: "12px",
+                marginBottom: "24px",
                 width: "100%",
               }}
             >
-              {/* Success Icon with Animation */}
-              <motion.div
-                initial={{ scale: 0, rotate: -180 }}
-                animate={{ scale: 1, rotate: 0 }}
-                transition={{
-                  type: "spring",
-                  delay: 0.2,
-                  duration: 0.8,
-                  stiffness: 200,
-                }}
-                style={{ marginBottom: "24px" }}
-              >
-                <div
+              {[
+                {
+                  label: "Drivers Optimized",
+                  value: "45",
+                  color: "#059669",
+                },
+                {
+                  label: "Vehicles Assigned",
+                  value: "38",
+                  color: "#09304dff",
+                },
+                {
+                  label: "Cost Savings",
+                  value: "£2,340",
+                  color: "#9c7aeaff",
+                },
+                {
+                  label: "Processing Time",
+                  value: `${processingTime}s`,
+                  color: "#f59e0b",
+                },
+              ].map((stat, index) => (
+                <motion.div
+                  key={stat.label}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.4 + index * 0.1 }}
                   style={{
-                    width: "80px",
-                    height: "80px",
-                    borderRadius: "50%",
-                    background:
-                      "linear-gradient(135deg, #059669 0%, #047857 100%)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    margin: "0 auto",
-                    boxShadow:
-                      "0 8px 32px rgba(5, 150, 105, 0.3), 0 0 40px rgba(5, 150, 105, 0.2)",
-                    position: "relative",
+                    background: "rgba(255, 255, 255, 0.1)",
+                    backdropFilter: "blur(10px)",
+                    border: `1px solid ${stat.color}40`,
+                    borderRadius: "12px",
+                    padding: "16px 12px",
+                    textAlign: "center",
+                    boxShadow: `0 4px 20px ${stat.color}20`,
                   }}
                 >
-                  <CheckmarkCircleRegular
+                  <Title3
                     style={{
-                      fontSize: "40px",
-                      color: "white",
-                    }}
-                  />
-                  {/* Glow effect */}
-                  <div
-                    style={{
-                      position: "absolute",
-                      width: "100%",
-                      height: "100%",
-                      borderRadius: "50%",
-                      background:
-                        "linear-gradient(135deg, rgba(5, 150, 105, 0.4) 0%, rgba(4, 120, 87, 0.4) 100%)",
-                      animation: "pulse 2s ease-in-out infinite",
-                    }}
-                  />
-                </div>
-              </motion.div>
-
-              {/* Title with SAMARA branding */}
-              <div style={{ marginBottom: "24px" }}>
-                <Title1
-                  style={{
-                    background:
-                      "linear-gradient(135deg, #059669 0%, #047857 100%)",
-                    WebkitBackgroundClip: "text",
-                    WebkitTextFillColor: "transparent",
-                    backgroundClip: "text",
-                    fontSize: "32px",
-                    fontWeight: 700,
-                    marginBottom: "8px",
-                    letterSpacing: "-0.5px",
-                  }}
-                >
-                  Roster Generated Successfully!
-                </Title1>
-                <br />
-                <Body1
-                  style={{
-                    color: "rgba(255, 255, 255, 0.8)",
-                    fontSize: "16px",
-                    fontWeight: 400,
-                  }}
-                >
-                  SAMARA has optimized your transportation roster with full
-                  compliance
-                </Body1>
-              </div>
-
-              {/* Elegant stats cards */}
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
-                  gap: "16px",
-                  marginBottom: "32px",
-                }}
-              >
-                {[
-                  {
-                    label: "Drivers Optimized",
-                    value: "45",
-                    color: "#059669",
-                    icon: "👥",
-                  },
-                  {
-                    label: "Vehicles Assigned",
-                    value: "38",
-                    color: "#0078d4",
-                    icon: "🚌",
-                  },
-                  {
-                    label: "Cost Savings",
-                    value: "£2,340",
-                    color: "#8b5cf6",
-                    icon: "💰",
-                  },
-                  {
-                    label: "Processing Time",
-                    value: `${processingTime}s`,
-                    color: "#f59e0b",
-                    icon: "⚡",
-                  },
-                ].map((stat, index) => (
-                  <motion.div
-                    key={stat.label}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.4 + index * 0.1 }}
-                    style={{
-                      background: "rgba(255, 255, 255, 0.1)",
-                      backdropFilter: "blur(10px)",
-                      border: `1px solid ${stat.color}40`,
-                      borderRadius: "12px",
-                      padding: "20px 16px",
-                      textAlign: "center",
-                      boxShadow: `0 4px 20px ${stat.color}20`,
+                      color: stat.color,
+                      marginBottom: "8px",
+                      fontSize: "20px",
+                      fontWeight: 700,
                     }}
                   >
-                    <div style={{ fontSize: "20px", marginBottom: "8px" }}>
-                      {stat.icon}
-                    </div>
-                    <Title3
-                      style={{
-                        color: stat.color,
-                        marginBottom: "4px",
-                        fontSize: "24px",
-                        fontWeight: 700,
-                      }}
-                    >
-                      {stat.value}
-                    </Title3>
-                    <Caption1
-                      style={{
-                        color: "rgba(255, 255, 255, 0.7)",
-                        fontSize: "12px",
-                        fontWeight: 500,
-                      }}
-                    >
-                      {stat.label}
-                    </Caption1>
-                  </motion.div>
-                ))}
-              </div>
+                    {stat.value}
+                  </Title3>
+                  <Caption1
+                    style={{
+                      color: "rgba(255, 255, 255, 0.7)",
+                      fontSize: "12px",
+                      fontWeight: 500,
+                    }}
+                  >
+                    {stat.label}
+                  </Caption1>
+                </motion.div>
+              ))}
+            </div>
 
-              {/* SAMARA AI conversation card */}
-              <motion.div
+            {/* SAMARA AI conversation card */}
+            {/* <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.8 }}
@@ -2895,16 +2887,16 @@ export const InvestorRosterDemo: React.FC = () => {
                   padding: "24px",
                   marginBottom: "32px",
                 }}
-              >
-                <div
+              > */}
+            {/* <div
                   style={{
                     display: "flex",
                     alignItems: "center",
                     gap: "16px",
                     marginBottom: "16px",
                   }}
-                >
-                  <Avatar
+                > */}
+            {/* <Avatar
                     name="SAMARA AI"
                     style={{
                       background:
@@ -2913,8 +2905,8 @@ export const InvestorRosterDemo: React.FC = () => {
                       height: "48px",
                       fontSize: "18px",
                     }}
-                  />
-                  <div style={{ flex: 1, textAlign: "left" }}>
+                  /> */}
+            {/* <div style={{ flex: 1, textAlign: "left" }}>
                     <Subtitle1
                       style={{
                         color: "rgba(255, 255, 255, 0.9)",
@@ -2932,9 +2924,9 @@ export const InvestorRosterDemo: React.FC = () => {
                     >
                       Ready for your next request
                     </Caption1>
-                  </div>
-                </div>
-                <Body1
+                  </div> */}
+            {/* </div> */}
+            {/* <Body1
                   style={{
                     color: "rgba(255, 255, 255, 0.8)",
                     fontStyle: "italic",
@@ -2945,129 +2937,130 @@ export const InvestorRosterDemo: React.FC = () => {
                   "Excellent! Your roster has been optimized with full
                   regulatory compliance. Would you like me to generate next
                   week's schedule or help with something else?"
-                </Body1>
-              </motion.div>
+                </Body1> */}
+            {/* </motion.div> */}
 
-              {/* Action buttons */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 1.0 }}
-                style={{
-                  display: "flex",
-                  gap: "12px",
-                  justifyContent: "center",
-                  flexWrap: "wrap",
-                }}
-              >
-                {[
-                  {
-                    label: "Generate Next Week",
-                    variant: "secondary" as const,
-                    color: "#0078d4",
-                    icon: <ArrowRightRegular style={{ fontSize: "16px" }} />,
-                  },
-                  {
-                    label: "Export to Teams",
-                    variant: "secondary" as const,
-                    color: "#6264a7",
-                    icon: <WindowRegular style={{ fontSize: "16px" }} />,
-                  },
-                  {
-                    label: "Schedule Review",
-                    variant: "secondary" as const,
-                    color: "#f59e0b",
-                    icon: <ClockRegular style={{ fontSize: "16px" }} />,
-                  },
-                ].map((action, index) => (
-                  <Button
-                    key={action.label}
-                    appearance={action.variant}
-                    size="medium"
-                    style={{
-                      background: "rgba(255, 255, 255, 0.1)",
-                      backdropFilter: "blur(10px)",
-                      border: `1px solid ${action.color}40`,
-                      borderRadius: "8px",
-                      color: action.color,
-                      padding: "12px 20px",
-                      fontWeight: 500,
-                      boxShadow: `0 4px 12px ${action.color}20`,
-                      transition: "all 0.2s ease",
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = `${action.color}20`;
-                      e.currentTarget.style.borderColor = `${action.color}60`;
-                      e.currentTarget.style.transform = "translateY(-2px)";
-                      e.currentTarget.style.boxShadow = `0 6px 20px ${action.color}30`;
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background =
-                        "rgba(255, 255, 255, 0.1)";
-                      e.currentTarget.style.borderColor = `${action.color}40`;
-                      e.currentTarget.style.transform = "translateY(0)";
-                      e.currentTarget.style.boxShadow = `0 4px 12px ${action.color}20`;
-                    }}
-                  >
-                    {action.icon}
-                    <span style={{ marginLeft: "8px" }}>{action.label}</span>
-                  </Button>
-                ))}
-              </motion.div>
-
-              {/* Primary CTA */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 1.2 }}
-                style={{ marginTop: "24px" }}
-              >
+            {/* Action buttons */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 1.0 }}
+              style={{
+                display: "flex",
+                gap: "8px",
+                justifyContent: "center",
+                flexWrap: "wrap",
+                marginBottom: "16px",
+              }}
+            >
+              {[
+                {
+                  label: "Generate Next Week",
+                  variant: "secondary" as const,
+                  color: "rgb(255 233 46)",
+                  icon: <ArrowRightRegular style={{ fontSize: "16px" }} />,
+                },
+                {
+                  label: "Export to Teams",
+                  variant: "secondary" as const,
+                  color: "#edeeffff",
+                  icon: <WindowRegular style={{ fontSize: "16px" }} />,
+                },
+                {
+                  label: "Schedule Review",
+                  variant: "secondary" as const,
+                  color: "#dc11c6",
+                  icon: <ClockRegular style={{ fontSize: "16px" }} />,
+                },
+              ].map((action, index) => (
                 <Button
-                  appearance="primary"
-                  size="large"
-                  onClick={() => {
-                    setCurrentState("prompt");
-                    setPrompt("");
-                    setCurrentStepIndex(0);
-                    setProcessingTime(0);
-                    setExpandedStep(null);
-                    setSteps(
-                      workflowSteps.map((step) => ({
-                        ...step,
-                        status: "pending" as const,
-                        duration: undefined,
-                      }))
-                    );
-                  }}
+                  key={action.label}
+                  appearance={action.variant}
+                  size="medium"
                   style={{
-                    background:
-                      "linear-gradient(135deg, #8b5cf6 0%, #a855f7 100%)",
-                    border: "none",
-                    borderRadius: "12px",
-                    padding: "16px 32px",
-                    fontSize: "16px",
-                    fontWeight: 600,
-                    boxShadow: "0 8px 32px rgba(139, 92, 246, 0.4)",
+                    background: "rgba(255, 255, 255, 0.1)",
+                    backdropFilter: "blur(10px)",
+                    border: `1px solid ${action.color}40`,
+                    borderRadius: "8px",
+                    color: action.color,
+                    padding: "10px 16px",
+                    fontWeight: 500,
+                    fontSize: "14px",
+                    boxShadow: `0 4px 12px ${action.color}20`,
                     transition: "all 0.2s ease",
                   }}
                   onMouseEnter={(e) => {
+                    e.currentTarget.style.background = `${action.color}20`;
+                    e.currentTarget.style.borderColor = `${action.color}60`;
                     e.currentTarget.style.transform = "translateY(-2px)";
-                    e.currentTarget.style.boxShadow =
-                      "0 12px 40px rgba(139, 92, 246, 0.5)";
+                    e.currentTarget.style.boxShadow = `0 6px 20px ${action.color}30`;
                   }}
                   onMouseLeave={(e) => {
+                    e.currentTarget.style.background =
+                      "rgba(255, 255, 255, 0.1)";
+                    e.currentTarget.style.borderColor = `${action.color}40`;
                     e.currentTarget.style.transform = "translateY(0)";
-                    e.currentTarget.style.boxShadow =
-                      "0 8px 32px rgba(139, 92, 246, 0.4)";
+                    e.currentTarget.style.boxShadow = `0 4px 12px ${action.color}20`;
                   }}
                 >
-                  <ArrowRightRegular
-                    style={{ fontSize: "18px", marginRight: "8px" }}
-                  />
-                  Start New Request
+                  {action.icon}
+                  <span style={{ marginLeft: "8px" }}>{action.label}</span>
                 </Button>
-              </motion.div>
-            </Card>
+              ))}
+            </motion.div>
+
+            {/* Primary CTA */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 1.2 }}
+              style={{ marginTop: "16px" }}
+            >
+              <Button
+                appearance="primary"
+                size="large"
+                onClick={() => {
+                  setCurrentState("prompt");
+                  setPrompt("");
+                  setCurrentStepIndex(0);
+                  setProcessingTime(0);
+                  setExpandedStep(null);
+                  setSteps(
+                    workflowSteps.map((step) => ({
+                      ...step,
+                      status: "pending" as const,
+                      duration: undefined,
+                    }))
+                  );
+                }}
+                style={{
+                  background:
+                    "linear-gradient(135deg, #8b5cf6 0%, #a855f7 100%)",
+                  border: "none",
+                  borderRadius: "12px",
+                  padding: "16px 32px",
+                  fontSize: "16px",
+                  fontWeight: 600,
+                  boxShadow: "0 8px 32px rgba(139, 92, 246, 0.4)",
+                  transition: "all 0.2s ease",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = "translateY(-2px)";
+                  e.currentTarget.style.boxShadow =
+                    "0 12px 40px rgba(139, 92, 246, 0.5)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = "translateY(0)";
+                  e.currentTarget.style.boxShadow =
+                    "0 8px 32px rgba(139, 92, 246, 0.4)";
+                }}
+              >
+                <ArrowRightRegular
+                  style={{ fontSize: "18px", marginRight: "8px" }}
+                />
+                Start New Request
+              </Button>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
