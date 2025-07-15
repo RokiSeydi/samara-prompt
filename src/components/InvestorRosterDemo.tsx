@@ -223,7 +223,7 @@ export const InvestorRosterDemo: React.FC = () => {
       samaraAnalysis: {
         issues: [
           {
-            type: "warning",
+            type: "error",
             title: "Driving Hours Exceeded",
             description:
               "Driver M. Thompson scheduled for 11 hours on Thursday, exceeding 10-hour ORR limit",
@@ -1605,6 +1605,7 @@ export const InvestorRosterDemo: React.FC = () => {
                         alignItems: "center",
                         gap: "16px",
                         marginBottom: "16px",
+                        paddingRight: "120px", // Add padding to avoid status badge overlap
                       }}
                     >
                       <div
@@ -1625,14 +1626,27 @@ export const InvestorRosterDemo: React.FC = () => {
                         {getAppIcon(step.appIcon)}
                       </div>
                       <div style={{ flex: 1 }}>
-                        <Subtitle1 style={{ marginBottom: "4px" }}>
+                        <Subtitle1
+                          style={{
+                            marginBottom: "4px",
+                            color: "rgba(255, 255, 255, 0.95)",
+                            fontWeight: 600,
+                            textShadow: "0 1px 3px rgba(0, 0, 0, 0.3)",
+                          }}
+                        >
                           {step.title}
                         </Subtitle1>
                       </div>
                     </div>
 
                     {/* Action description */}
-                    <Body2 style={{ marginBottom: "16px", lineHeight: 1.4 }}>
+                    <Body2
+                      style={{
+                        marginBottom: "16px",
+                        lineHeight: 1.4,
+                        color: "rgba(255, 255, 255, 0.85)",
+                      }}
+                    >
                       {step.id === "optimization" && isAutoFixing
                         ? "Re-optimizing roster with compliance fixes..."
                         : step.action}
@@ -1655,7 +1669,12 @@ export const InvestorRosterDemo: React.FC = () => {
                         }}
                       >
                         <DocumentRegular style={{ fontSize: "16px" }} />
-                        <Caption1 style={{ fontFamily: "Consolas, monospace" }}>
+                        <Caption1
+                          style={{
+                            fontFamily: "Consolas, monospace",
+                            color: "rgba(255, 255, 255, 0.9)",
+                          }}
+                        >
                           {step.file}
                         </Caption1>
                       </div>
@@ -1702,7 +1721,7 @@ export const InvestorRosterDemo: React.FC = () => {
                           <Caption1
                             style={{
                               fontWeight: 600,
-                              color: "rgb(49 24 106 / 90%)",
+                              color: "#c4aaffe6",
                             }}
                           >
                             SAMARA Analysis
@@ -1761,7 +1780,7 @@ export const InvestorRosterDemo: React.FC = () => {
                           style={{
                             fontSize: "11px",
                             lineHeight: 1.3,
-                            opacity: 0.8,
+                            color: "rgba(255, 255, 255, 0.85)",
                           }}
                         >
                           {step.samaraAnalysis.summary}
@@ -1794,7 +1813,7 @@ export const InvestorRosterDemo: React.FC = () => {
                                 <span
                                   style={{
                                     fontWeight: 600,
-                                    color: "rgb(30, 64, 175)",
+                                    color: "#000",
                                   }}
                                 >
                                   Compliance Update
@@ -1851,7 +1870,7 @@ export const InvestorRosterDemo: React.FC = () => {
                             <Caption1
                               style={{
                                 fontWeight: 600,
-                                color: "rgb(98, 100, 167)",
+                                color: "#1a1c60",
                               }}
                             >
                               Message Preview
@@ -1917,6 +1936,19 @@ export const InvestorRosterDemo: React.FC = () => {
                               <Button
                                 size="small"
                                 appearance="secondary"
+                                onClick={() => {
+                                  // Download Excel file for users to open locally
+                                  const link = document.createElement("a");
+                                  link.href =
+                                    "/sample_transportation_roster.xlsx";
+                                  link.download =
+                                    step.id === "excel-access"
+                                      ? "Driver_Schedule_Week_28.xlsx"
+                                      : step.file || "roster_data.xlsx";
+                                  document.body.appendChild(link);
+                                  link.click();
+                                  document.body.removeChild(link);
+                                }}
                                 style={{
                                   background: "rgba(255, 255, 255, 0.6)",
                                   backdropFilter: "blur(10px)",
@@ -2158,6 +2190,19 @@ export const InvestorRosterDemo: React.FC = () => {
                               <Button
                                 size="small"
                                 appearance="secondary"
+                                onClick={() => {
+                                  // Download Excel file for users to review before approval
+                                  const link = document.createElement("a");
+                                  link.href =
+                                    "/sample_transportation_roster.xlsx";
+                                  link.download =
+                                    step.id === "excel-access"
+                                      ? "Driver_Schedule_Week_28.xlsx"
+                                      : step.file || "roster_data.xlsx";
+                                  document.body.appendChild(link);
+                                  link.click();
+                                  document.body.removeChild(link);
+                                }}
                                 style={{
                                   background: "rgba(255, 255, 255, 0.6)",
                                   backdropFilter: "blur(10px)",
@@ -2177,6 +2222,19 @@ export const InvestorRosterDemo: React.FC = () => {
                               <Button
                                 size="small"
                                 appearance="secondary"
+                                onClick={() => {
+                                  // Alternative download for preview
+                                  const link = document.createElement("a");
+                                  link.href =
+                                    "/sample_transportation_roster.xlsx";
+                                  link.download =
+                                    step.id === "excel-access"
+                                      ? "Driver_Schedule_Week_28.xlsx"
+                                      : step.file || "roster_data.xlsx";
+                                  document.body.appendChild(link);
+                                  link.click();
+                                  document.body.removeChild(link);
+                                }}
                                 style={{
                                   background: "rgba(255, 255, 255, 0.6)",
                                   backdropFilter: "blur(10px)",
@@ -2324,7 +2382,7 @@ export const InvestorRosterDemo: React.FC = () => {
                                   borderRadius: "4px",
                                   boxShadow:
                                     "0 4px 12px rgba(251, 191, 36, 0.1)",
-                                  color: "rgb(146, 64, 14)",
+                                  color: "rgb(255, 165, 110)",
                                   opacity: isAutoFixing ? 0.6 : 1,
                                 }}
                               >
@@ -2335,7 +2393,7 @@ export const InvestorRosterDemo: React.FC = () => {
                                         width: "14px",
                                         height: "14px",
                                         border: "2px solid transparent",
-                                        borderTop: "2px solid rgb(146, 64, 14)",
+                                        borderTop: "2px solid #ffa56e",
                                         borderRadius: "50%",
                                         animation: "spin 1s linear infinite",
                                         marginRight: "6px",
@@ -2349,6 +2407,7 @@ export const InvestorRosterDemo: React.FC = () => {
                                       style={{
                                         fontSize: "14px",
                                         marginRight: "6px",
+                                        color: "#ffa56e",
                                       }}
                                     />
                                     Auto-Fix Issue
@@ -2815,7 +2874,7 @@ export const InvestorRosterDemo: React.FC = () => {
                 {
                   label: "Vehicles Assigned",
                   value: "38",
-                  color: "#09304dff",
+                  color: "rgb(64, 133, 184)",
                 },
                 {
                   label: "Cost Savings",
@@ -2846,9 +2905,11 @@ export const InvestorRosterDemo: React.FC = () => {
                   <Title3
                     style={{
                       color: stat.color,
-                      marginBottom: "8px",
+                      marginBottom: "4px",
                       fontSize: "20px",
                       fontWeight: 700,
+                      display: "block",
+                      textAlign: "center",
                     }}
                   >
                     {stat.value}
@@ -2858,6 +2919,8 @@ export const InvestorRosterDemo: React.FC = () => {
                       color: "rgba(255, 255, 255, 0.7)",
                       fontSize: "12px",
                       fontWeight: 500,
+                      display: "block",
+                      textAlign: "center",
                     }}
                   >
                     {stat.label}
